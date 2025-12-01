@@ -1,0 +1,188 @@
+<%- include('partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero page-hero-accent">
+      <div class="container">
+        <p class="eyebrow">Support Our Mission</p>
+        <h1>Your gift helps girls <em>rise</em>.</h1>
+        <p class="page-lead">Every dollar you donate goes directly toward mentorship, education, and community programs that change lives.</p>
+      </div>
+    </section>
+
+    <!-- Donation Options -->
+    <section class="section">
+      <div class="container">
+        <div class="donate-grid">
+          <!-- Donation Form Card -->
+          <div class="donate-form-card">
+            <h2>Make a Gift</h2>
+            <p>Choose a giving level or enter a custom amount.</p>
+
+            <div class="amount-options">
+              <button class="amount-btn" data-amount="25">$25</button>
+              <button class="amount-btn" data-amount="50">$50</button>
+              <button class="amount-btn active" data-amount="100">$100</button>
+              <button class="amount-btn" data-amount="250">$250</button>
+              <button class="amount-btn" data-amount="500">$500</button>
+              <button class="amount-btn" data-amount="1000">$1,000</button>
+            </div>
+
+            <div class="custom-amount">
+              <label for="customAmount">Or enter a custom amount:</label>
+              <div class="input-with-prefix">
+                <span class="prefix">$</span>
+                <input type="number" id="customAmount" name="customAmount" placeholder="Other amount">
+              </div>
+            </div>
+
+            <div class="donation-frequency">
+              <label>Donation frequency:</label>
+              <div class="frequency-options">
+                <label class="radio-option">
+                  <input type="radio" name="frequency" value="once" checked>
+                  <span>One-time</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="frequency" value="monthly">
+                  <span>Monthly</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="frequency" value="annual">
+                  <span>Annually</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="designation">
+              <label for="designation">Designate your gift (optional):</label>
+              <select id="designation" name="designation">
+                <option value="greatest-need">Where it's needed most</option>
+                <option value="mentorship">Mentorship Program</option>
+                <option value="scholarships">Scholarships</option>
+                <option value="workshops">Workshops & Education</option>
+                <option value="community">Community Programs</option>
+              </select>
+            </div>
+
+            <button class="btn btn-primary btn-lg btn-full">Donate Now</button>
+
+            <p class="donate-note">Ella Rises is a 501(c)(3) nonprofit organization. Your donation is tax-deductible to the extent allowed by law.</p>
+          </div>
+
+          <!-- Impact Info -->
+          <div class="donate-impact">
+            <h3>Your Impact</h3>
+            <div class="impact-levels">
+              <div class="impact-level">
+                <span class="impact-amount">$25</span>
+                <p>Provides workshop materials for one student</p>
+              </div>
+              <div class="impact-level">
+                <span class="impact-amount">$50</span>
+                <p>Covers transportation for a mentee to attend monthly meetings</p>
+              </div>
+              <div class="impact-level">
+                <span class="impact-amount">$100</span>
+                <p>Sponsors one girl for a full month of programming</p>
+              </div>
+              <div class="impact-level">
+                <span class="impact-amount">$250</span>
+                <p>Funds mentor training for one new volunteer</p>
+              </div>
+              <div class="impact-level">
+                <span class="impact-amount">$500</span>
+                <p>Supports a community circle for one semester</p>
+              </div>
+              <div class="impact-level">
+                <span class="impact-amount">$1,000</span>
+                <p>Provides a full scholarship for one year of programming</p>
+              </div>
+            </div>
+
+            <div class="other-ways">
+              <h4>Other Ways to Give</h4>
+              <ul>
+                <li><a href="/contact">Donate stock or securities</a></li>
+                <li><a href="/contact">Include us in your estate plan</a></li>
+                <li><a href="/contact">Set up a matching gift through your employer</a></li>
+                <li><a href="/contact">Sponsor an event</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Monthly Giving -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="content-grid">
+          <div class="content-text">
+            <span class="badge">Sustaining Support</span>
+            <h2>Become a Monthly Giver</h2>
+            <p>Monthly donors are the backbone of our organization. Your recurring gift provides stable, predictable funding that allows us to plan ahead and serve more girls year-round.</p>
+            
+            <h4>Benefits of monthly giving:</h4>
+            <ul class="check-list">
+              <li>Spread your impact throughout the year</li>
+              <li>Receive exclusive updates on the girls you're helping</li>
+              <li>Join our Rising Circle of committed supporters</li>
+              <li>Easy to adjust or cancel anytime</li>
+            </ul>
+
+            <a href="#" class="btn btn-primary">Start Monthly Giving</a>
+          </div>
+          <div class="content-visual">
+            <div class="testimonial-highlight">
+              <blockquote>"I give monthly because I know that consistent support makes a real difference. It's not about the amount—it's about showing up for these girls every month."</blockquote>
+              <cite>— Sarah M., Monthly Donor since 2020</cite>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Corporate Giving -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header centered">
+          <p class="eyebrow">Corporate Giving</p>
+          <h2>Partner with us to make a bigger impact</h2>
+          <p class="section-lead">Corporate sponsors play a vital role in our work. Learn about sponsorship opportunities and employee giving programs.</p>
+        </div>
+
+        <div class="corporate-options">
+          <div class="corporate-card">
+            <h4>Event Sponsorship</h4>
+            <p>Put your brand in front of our community while supporting our mission. Sponsorship packages available for our annual gala and other events.</p>
+            <a href="/contact" class="card-link">Learn more →</a>
+          </div>
+          <div class="corporate-card">
+            <h4>Program Sponsorship</h4>
+            <p>Underwrite a specific program like our Leadership Academy or Community Circles. Receive recognition and impact reports.</p>
+            <a href="/contact" class="card-link">Learn more →</a>
+          </div>
+          <div class="corporate-card">
+            <h4>Matching Gifts</h4>
+            <p>Double your employees' impact through a matching gift program. We'll help you set it up and promote it.</p>
+            <a href="/contact" class="card-link">Learn more →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Thank You CTA -->
+    <section class="section section-cta">
+      <div class="container">
+        <div class="cta-content">
+          <h2>Thank you for believing in our girls.</h2>
+          <p>Have questions about giving? We're here to help.</p>
+          <div class="cta-buttons">
+            <a class="btn btn-primary btn-lg" href="/contact">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('partials/footer') %>
+

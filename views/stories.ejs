@@ -1,0 +1,140 @@
+<%- include('partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Success Stories</p>
+        <h1>Real stories of <em>real impact</em>.</h1>
+        <p class="page-lead">Every number represents a life changed. Here are some of the women and girls who inspire us every day.</p>
+      </div>
+    </section>
+
+    <!-- Featured Story -->
+    <section class="section">
+      <div class="container">
+        <div class="featured-story">
+          <div class="featured-image">
+            <div class="image-placeholder featured">
+              <span>Featured Story Image</span>
+            </div>
+          </div>
+          <div class="featured-content">
+            <span class="story-tag">Featured Story</span>
+            <h2>"Ella Rises showed me that my dreams weren't too big."</h2>
+            <p>When Maria joined Ella Rises as a shy sophomore, she never imagined she'd be speaking at her high school graduation three years later. Through mentorship and our Leadership Academy, she discovered her voice—and learned how to use it.</p>
+            <p>Today, Maria is a junior at State University studying communications, and she volunteers as a mentor for the next generation of Ella Rises girls.</p>
+            <div class="story-meta">
+              <span class="story-author">Maria, Class of 2022</span>
+              <span class="story-program">Mentorship & Leadership Academy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Story Grid -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-header">
+          <h2>More voices from our community</h2>
+        </div>
+
+        <div class="stories-grid">
+          <% stories.forEach(story => { %>
+            <article class="story-card">
+              <div class="story-card-image">
+                <div class="image-placeholder"></div>
+              </div>
+              <div class="story-card-content">
+                <blockquote>"<%= story.quote %>"</blockquote>
+                <cite><%= story.name %></cite>
+              </div>
+            </article>
+          <% }) %>
+
+          <!-- Additional placeholder stories -->
+          <article class="story-card">
+            <div class="story-card-image">
+              <div class="image-placeholder"></div>
+            </div>
+            <div class="story-card-content">
+              <blockquote>"The workshops gave me skills I use every day in my career. I learned how to negotiate, how to network, and how to believe in myself."</blockquote>
+              <cite>Taylor, Program Alumna</cite>
+            </div>
+          </article>
+
+          <article class="story-card">
+            <div class="story-card-image">
+              <div class="image-placeholder"></div>
+            </div>
+            <div class="story-card-content">
+              <blockquote>"Being part of a community circle changed how I see myself. I'm not alone anymore—I have sisters who understand me."</blockquote>
+              <cite>Destiny, Community Circle Member</cite>
+            </div>
+          </article>
+
+          <article class="story-card">
+            <div class="story-card-image">
+              <div class="image-placeholder"></div>
+            </div>
+            <div class="story-card-content">
+              <blockquote>"As a mentor, I thought I was giving back. But I've received so much more than I've given. These girls inspire me every day."</blockquote>
+              <cite>Dr. Williams, Volunteer Mentor</cite>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Video Stories -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header centered">
+          <p class="eyebrow">Watch & Listen</p>
+          <h2>Stories in their own words</h2>
+        </div>
+
+        <div class="video-grid">
+          <div class="video-card">
+            <div class="video-placeholder">
+              <div class="play-button">▶</div>
+              <span>Video: A Mentor's Journey</span>
+            </div>
+            <h4>A Mentor's Journey</h4>
+            <p>Sarah shares how mentoring changed her perspective on leadership.</p>
+          </div>
+          <div class="video-card">
+            <div class="video-placeholder">
+              <div class="play-button">▶</div>
+              <span>Video: From Mentee to Mentor</span>
+            </div>
+            <h4>From Mentee to Mentor</h4>
+            <p>How one graduate came full circle to give back.</p>
+          </div>
+          <div class="video-card">
+            <div class="video-placeholder">
+              <div class="play-button">▶</div>
+              <span>Video: Community Impact</span>
+            </div>
+            <h4>Community Impact</h4>
+            <p>See how Ella Rises transforms entire communities.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Share Your Story CTA -->
+    <section class="section section-cta">
+      <div class="container">
+        <div class="cta-content">
+          <h2>Have a story to share?</h2>
+          <p>We'd love to hear how Ella Rises has impacted your life. Your story could inspire the next generation.</p>
+          <div class="cta-buttons">
+            <a class="btn btn-primary btn-lg" href="/contact">Share Your Story</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('partials/footer') %>
+

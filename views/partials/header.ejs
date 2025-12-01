@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof pageTitle !== 'undefined' ? pageTitle + ' | ' : '' %><%= brand.name %></title>
+  <meta name="description" content="<%= typeof pageDescription !== 'undefined' ? pageDescription : brand.tagline %>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-content">
+      <a href="/" class="logo-group">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
+            <path d="M20 8 C12 14, 12 26, 20 32 C28 26, 28 14, 20 8Z" fill="currentColor" opacity="0.3"/>
+            <path d="M14 20 Q20 12, 26 20 Q20 28, 14 20Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <span class="brand-name"><%= brand.name %></span>
+      </a>
+      
+      <nav class="main-nav" id="mainNav">
+        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'about' ? ' active' : '' %>" href="/about">About</a>
+        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'programs' ? ' active' : '' %>" href="/programs">Programs</a>
+        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'stories' ? ' active' : '' %>" href="/stories">Stories</a>
+        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'events' ? ' active' : '' %>" href="/events">Events</a>
+        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'resources' ? ' active' : '' %>" href="/resources">Resources</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'contact' ? ' active' : '' %>" href="/contact">Contact</a>
+        <a class="btn btn-primary" href="/donate">Donate</a>
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+

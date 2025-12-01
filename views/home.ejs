@@ -1,0 +1,149 @@
+<%- include('partials/header') %>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <p class="eyebrow">Empowering Women & Girls</p>
+          <h1>We stand behind girls<br>so they can <em>stand tall</em>.</h1>
+          <p class="hero-lead"><%= brand.tagline %></p>
+          <div class="hero-cta">
+            <a class="btn btn-primary btn-lg" href="/get-involved">Get Involved</a>
+            <a class="btn btn-outline btn-lg" href="/about">Our Story</a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card">
+            <div class="hero-card-header">
+              <span class="badge">Our Focus</span>
+            </div>
+            <ul class="focus-list">
+              <% focusAreas.forEach(area => { %>
+                <li><%= area.title %></li>
+              <% }) %>
+            </ul>
+            <div class="hero-stat">
+              <span class="stat-number"><%= stats[0].value %></span>
+              <span class="stat-label"><%= stats[0].label %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-decoration" aria-hidden="true">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+      </div>
+    </section>
+
+    <!-- Values Tags -->
+    <section class="values-strip">
+      <div class="container">
+        <div class="values-scroll">
+          <span class="value-tag">Belonging</span>
+          <span class="value-tag">Courage</span>
+          <span class="value-tag">Leadership</span>
+          <span class="value-tag">Joy</span>
+          <span class="value-tag">Community</span>
+          <span class="value-tag">Growth</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section id="mission" class="section">
+      <div class="container">
+        <div class="section-header centered">
+          <p class="eyebrow">Our Mission</p>
+          <h2>Creating spaces where women champion each other.</h2>
+          <p class="section-lead">We partner with families, schools, and mentors to open doors for girls. Our work centers belonging, confidence, and practical skills that translate into leadership.</p>
+        </div>
+        
+        <div class="feature-grid">
+          <% focusAreas.forEach((area, index) => { %>
+            <article class="feature-card">
+              <div class="feature-icon">
+                <% if (index === 0) { %>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <% } else if (index === 1) { %>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <% } else { %>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                <% } %>
+              </div>
+              <h3><%= area.title %></h3>
+              <p><%= area.copy %></p>
+              <a href="/programs#<%= area.title.toLowerCase() %>" class="card-link">Learn more →</a>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <!-- Impact Stats -->
+    <section id="impact" class="section section-alt">
+      <div class="container">
+        <div class="section-header">
+          <p class="eyebrow">Our Impact</p>
+          <h2>Investing in girls creates ripple effects for families and communities.</h2>
+        </div>
+        
+        <div class="stats-grid">
+          <% stats.forEach(stat => { %>
+            <div class="stat-card">
+              <span class="stat-number"><%= stat.value %></span>
+              <span class="stat-label"><%= stat.label %></span>
+            </div>
+          <% }) %>
+        </div>
+        
+        <div class="impact-cta">
+          <a href="/about#impact" class="btn btn-secondary">See Full Impact Report</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stories Section -->
+    <section id="stories" class="section">
+      <div class="container">
+        <div class="section-header">
+          <p class="eyebrow">Voices</p>
+          <h2>The women we serve keep us focused on what matters.</h2>
+        </div>
+        
+        <div class="testimonial-grid">
+          <% stories.forEach(story => { %>
+            <blockquote class="testimonial-card">
+              <div class="quote-mark">"</div>
+              <p class="quote-text"><%= story.quote %></p>
+              <footer class="quote-author">
+                <div class="author-avatar"></div>
+                <cite><%= story.name %></cite>
+              </footer>
+            </blockquote>
+          <% }) %>
+        </div>
+        
+        <div class="stories-cta">
+          <a href="/stories" class="btn btn-outline">Read More Stories</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section section-cta">
+      <div class="container">
+        <div class="cta-content">
+          <p class="eyebrow">Join Us</p>
+          <h2>Ready to lift with us?</h2>
+          <p>Partner as a mentor, donor, or advocate. Together we can make sure every girl knows she belongs and is ready to lead.</p>
+          <div class="cta-buttons">
+            <a class="btn btn-primary btn-lg" href="/donate">Donate Now</a>
+            <a class="btn btn-outline-light btn-lg" href="/get-involved">Volunteer</a>
+            <a class="btn btn-outline-light btn-lg" href="/contact">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('partials/footer') %>

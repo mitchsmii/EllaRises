@@ -1,0 +1,184 @@
+<%- include('partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Contact Us</p>
+        <h1>We'd love to <em>hear from you</em>.</h1>
+        <p class="page-lead">Whether you have a question, want to get involved, or just want to say hello—reach out. We're here.</p>
+      </div>
+    </section>
+
+    <!-- Contact Content -->
+    <section class="section">
+      <div class="container">
+        <div class="contact-grid">
+          <!-- Contact Form -->
+          <div class="contact-form-wrapper">
+            <h2>Send us a message</h2>
+            <form class="contact-form" action="/contact" method="POST">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firstName">First Name *</label>
+                  <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                  <label for="lastName">Last Name *</label>
+                  <input type="text" id="lastName" name="lastName" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required>
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone">
+              </div>
+
+              <div class="form-group">
+                <label for="subject">What can we help you with? *</label>
+                <select id="subject" name="subject" required>
+                  <option value="">Select a topic...</option>
+                  <option value="general">General Inquiry</option>
+                  <option value="mentor">Become a Mentor</option>
+                  <option value="volunteer">Volunteer Opportunities</option>
+                  <option value="donate">Donation Questions</option>
+                  <option value="partner">Partnership Inquiry</option>
+                  <option value="program">Program Information</option>
+                  <option value="media">Media/Press</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="message">Your Message *</label>
+                <textarea id="message" name="message" rows="5" required></textarea>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" name="newsletter">
+                  <span>Sign me up for the Ella Rises newsletter</span>
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+            </form>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="contact-info">
+            <div class="info-card">
+              <h3>Get in Touch</h3>
+              <div class="info-item">
+                <div class="info-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </div>
+                <div>
+                  <h4>Visit Us</h4>
+                  <p>123 Community Lane<br>Suite 100<br>Your City, ST 12345</p>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div>
+                  <h4>Email Us</h4>
+                  <p><a href="mailto:hello@ellarises.org">hello@ellarises.org</a></p>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <div>
+                  <h4>Call Us</h4>
+                  <p><a href="tel:+15551234567">(555) 123-4567</a></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <h3>Office Hours</h3>
+              <div class="hours-list">
+                <div class="hours-row">
+                  <span>Monday - Friday</span>
+                  <span>9:00 AM - 5:00 PM</span>
+                </div>
+                <div class="hours-row">
+                  <span>Saturday</span>
+                  <span>By Appointment</span>
+                </div>
+                <div class="hours-row">
+                  <span>Sunday</span>
+                  <span>Closed</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <h3>Follow Us</h3>
+              <div class="social-links-large">
+                <a href="#" class="social-link-lg">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  <span>Facebook</span>
+                </a>
+                <a href="#" class="social-link-lg">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="18" cy="6" r="1"/></svg>
+                  <span>Instagram</span>
+                </a>
+                <a href="#" class="social-link-lg">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                  <span>LinkedIn</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map Section -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="map-wrapper">
+          <div class="map-placeholder">
+            <span>Map will be embedded here</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Links CTA -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header centered">
+          <h2>Looking for something specific?</h2>
+        </div>
+        <div class="quick-links-grid">
+          <a href="/get-involved#mentor" class="quick-link-card">
+            <h4>Become a Mentor</h4>
+            <p>Learn about our mentorship program and how to apply.</p>
+          </a>
+          <a href="/donate" class="quick-link-card">
+            <h4>Make a Donation</h4>
+            <p>Support our mission with a one-time or recurring gift.</p>
+          </a>
+          <a href="/programs" class="quick-link-card">
+            <h4>Our Programs</h4>
+            <p>Explore the programs we offer for girls and women.</p>
+          </a>
+          <a href="/resources#faq" class="quick-link-card">
+            <h4>FAQs</h4>
+            <p>Find answers to commonly asked questions.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+<%- include('partials/footer') %>
+
