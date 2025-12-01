@@ -4,7 +4,7 @@
     <section class="page-hero">
       <div class="container">
         <p class="eyebrow">Welcome Back</p>
-        <h1>Hello, <em><%= user.firstName %></em>!</h1>
+        <h1>Hello, <em><%= user.firstName %>!</em></h1>
         <p class="page-lead">
           <% if (user.role === 'manager') { %>
             You're logged in as a manager. You have full access to manage content across the site.
@@ -88,23 +88,23 @@
               <a href="/events" class="card-link">Browse Events →</a>
             </div>
             
-            <div class="dashboard-card">
+            <a href="/milestones" class="dashboard-card">
               <div class="dashboard-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
               <h3>My Milestones</h3>
               <p>Track your progress and achievements.</p>
-              <span class="card-link muted">Coming soon</span>
-            </div>
+              <span class="card-link">View Milestones →</span>
+            </a>
             
-            <div class="dashboard-card">
+            <a href="/surveys" class="dashboard-card">
               <div class="dashboard-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               </div>
               <h3>My Surveys</h3>
-              <p>No pending surveys at this time.</p>
-              <span class="card-link muted">Check back later</span>
-            </div>
+              <p>View and complete available surveys.</p>
+              <span class="card-link">View Surveys →</span>
+            </a>
           </div>
         <% } %>
         

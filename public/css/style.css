@@ -222,15 +222,22 @@ p:last-child {
 .logo-group {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
   text-decoration: none;
 }
 
 .logo-mark {
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
-  padding: 0px;
+  margin-right: 0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.logo-group:hover .logo-mark {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .brand-name {
@@ -808,6 +815,21 @@ p:last-child {
   aspect-ratio: 16/10;
 }
 
+/* ---------- Video Container ---------- */
+.video-container {
+  background: linear-gradient(135deg, var(--peach), var(--salmon));
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  aspect-ratio: 16/9;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* ---------- Check List ---------- */
 .check-list {
   margin: var(--space-lg) 0;
@@ -876,12 +898,85 @@ p:last-child {
   gap: var(--space-xl);
 }
 
+.team-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .team-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .team-card {
   text-align: center;
 }
 
+/* ---------- Board of Directors ---------- */
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+}
+
+@media (max-width: 900px) {
+  .board-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .board-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+}
+
+.board-member {
+  text-align: center;
+}
+
+.board-photo {
+  margin-bottom: var(--space-md);
+}
+
+.board-photo .photo-placeholder {
+  width: 160px;
+  height: 160px;
+}
+
+.board-photo img {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto;
+  display: block;
+}
+
+.board-member h4 {
+  font-size: 1rem;
+  margin-bottom: var(--space-xs);
+}
+
+.board-title {
+  font-size: 0.8rem;
+  color: var(--coral);
+}
+
 .team-photo {
   margin-bottom: var(--space-lg);
+}
+
+.team-photo img {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto;
+  display: block;
 }
 
 .photo-placeholder {
@@ -935,7 +1030,103 @@ p:last-child {
   color: var(--text-secondary);
 }
 
-/* ---------- Program Detail ---------- */
+/* ---------- Program Cards Grid ---------- */
+.program-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.program-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+  min-height: 280px;
+}
+
+.program-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.program-card-content {
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.program-card-content h3 {
+  margin-bottom: var(--space-sm);
+  font-size: 1.25rem;
+}
+
+.program-card-content p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-lg);
+  flex-grow: 1;
+}
+
+.program-card-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.program-card-image .image-placeholder {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+}
+
+.program-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.program-number {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--peach);
+  line-height: 1;
+  margin-bottom: var(--space-sm);
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  align-self: flex-start;
+}
+
+@media (max-width: 1100px) {
+  .program-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .program-card {
+    grid-template-columns: 1fr;
+  }
+  
+  .program-card-image {
+    height: 200px;
+  }
+  
+  .program-card-left .program-card-image {
+    order: -1;
+  }
+}
+
+/* ---------- Program Detail (legacy) ---------- */
 .program-intro {
   max-width: 800px;
   margin: 0 auto;
@@ -957,15 +1148,6 @@ p:last-child {
 
 .program-detail.reverse > * {
   direction: ltr;
-}
-
-.program-number {
-  font-family: var(--font-display);
-  font-size: 4rem;
-  font-weight: 300;
-  color: var(--peach);
-  line-height: 1;
-  margin-bottom: var(--space-md);
 }
 
 .program-tagline {
@@ -2092,7 +2274,9 @@ p:last-child {
 }
 
 .footer-brand .logo-mark {
-  filter: brightness(0) invert(1);
+  /* Keep original colors - the pink circular logo looks great on dark backgrounds */
+  filter: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 .footer-brand .brand-name {
@@ -3124,5 +3308,274 @@ body {
   .stat-mini {
     min-width: 100px;
     padding: var(--space-md);
+  }
+}
+
+/* ============================================
+   AUTH PAGES (Login, Register)
+   ============================================ */
+
+.auth-section {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl) var(--space-lg);
+  background: linear-gradient(135deg, var(--cream) 0%, var(--peach) 100%);
+}
+
+.auth-card {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--space-3xl);
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+}
+
+.auth-header h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--charcoal);
+  margin-bottom: var(--space-sm);
+}
+
+.auth-header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.auth-form .form-group {
+  margin-bottom: var(--space-lg);
+}
+
+.auth-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: var(--space-xs);
+  color: var(--charcoal);
+}
+
+.auth-form input[type="text"],
+.auth-form input[type="email"],
+.auth-form input[type="password"] {
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  background-color: #fafafa;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--salmon);
+  background-color: var(--white);
+  box-shadow: 0 0 0 3px rgba(244, 165, 160, 0.2);
+}
+
+.btn-block {
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  font-size: 1rem;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.auth-footer p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.auth-footer a {
+  color: var(--salmon);
+  font-weight: 500;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+.alert {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  font-size: 0.9rem;
+}
+
+.alert-error {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.alert-success {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.nav-user {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  padding: 0 var(--space-sm);
+}
+
+/* ============================================
+   MILESTONE PROGRESS STYLES
+   ============================================ */
+
+/* Manager Stats Grid */
+.progress-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+}
+
+.progress-stat-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.progress-stat-card .stat-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, var(--peach), var(--salmon));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.progress-stat-card .stat-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--white);
+}
+
+.progress-stat-card .stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.progress-stat-card .stat-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  line-height: 1;
+}
+
+.progress-stat-card .stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-xs);
+}
+
+/* User Progress Card */
+.user-progress-card {
+  margin-bottom: var(--space-xl);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.progress-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.progress-percentage {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--salmon);
+}
+
+.progress-bar-container {
+  height: 6px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--peach), var(--salmon));
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+/* Milestone Card Completed State */
+.milestone-card {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.milestone-card.completed {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 2px solid #86efac;
+}
+
+.milestone-completed-badge {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: #16a34a;
+  color: white;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.milestone-completed-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .progress-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .progress-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .progress-details {
+    flex-wrap: wrap;
+    gap: var(--space-md);
   }
 }

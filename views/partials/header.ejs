@@ -13,9 +13,8 @@
 <body>
   <header class="site-header">
     <div class="container header-content">
-      <a href="/" class="logo-group">
-        <img src="/uploads/logos/ellariseslogo.png" alt="<%= brand.name %> logo" class="logo-mark">
-        <span class="brand-name"><%= brand.name %></span>
+      <a href="/" class="logo-group" aria-label="<%= brand.name %> - Home">
+        <img src="/uploads/logos/ellariseslogo.png" alt="<%= brand.name %>" class="logo-mark">
       </a>
       
       <nav class="main-nav" id="mainNav">
@@ -30,8 +29,10 @@
         <% if (user) { %>
           <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? ' active' : '' %>" href="/dashboard">Dashboard</a>
           <span class="nav-user">Hi, <%= user.firstName %></span>
+          <a class="nav-link" href="/logout">Logout</a>
         <% } else { %>
           <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'contact' ? ' active' : '' %>" href="/contact">Contact</a>
+          <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'login' ? ' active' : '' %>" href="/login">Login</a>
         <% } %>
         <a class="btn btn-primary" href="/donate">Donate</a>
         <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">

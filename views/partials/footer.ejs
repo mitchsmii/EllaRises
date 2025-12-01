@@ -4,9 +4,8 @@
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <a href="/" class="logo-group">
-            <img src="/uploads/logos/ellariseslogo.png" alt="<%= brand.name %> logo" class="logo-mark">
-            <span class="brand-name"><%= brand.name %></span>
+          <a href="/" class="logo-group" aria-label="<%= brand.name %> - Home">
+            <img src="/uploads/logos/ellariseslogo.png" alt="<%= brand.name %>" class="logo-mark">
           </a>
           <p class="footer-tagline"><%= brand.tagline %></p>
         </div>
@@ -63,19 +62,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- Dev Role Switcher (remove in production) -->
-  <div class="dev-toolbar">
-    <span class="dev-label">DEV MODE - View as:</span>
-    <a href="/dev/switch-role/public" class="dev-btn <%= !user ? 'active' : '' %>">Public</a>
-    <a href="/dev/switch-role/user" class="dev-btn <%= user && user.role === 'user' ? 'active' : '' %>">User</a>
-    <a href="/dev/switch-role/manager" class="dev-btn <%= user && user.role === 'manager' ? 'active' : '' %>">Manager</a>
-    <% if (user) { %>
-      <span class="dev-user">Logged in as: <%= user.firstName %> <%= user.lastName %> (<%= user.role %>)</span>
-    <% } else { %>
-      <span class="dev-user">Not logged in</span>
-    <% } %>
-  </div>
 
   <script>
     // Mobile navigation toggle

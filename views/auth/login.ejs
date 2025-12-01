@@ -1,0 +1,43 @@
+<%- include('../partials/header') %>
+
+    <section class="auth-section">
+      <div class="container">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h1>Welcome Back</h1>
+            <p>Sign in to access your dashboard</p>
+          </div>
+
+          <% if (typeof error !== 'undefined' && error) { %>
+            <div class="alert alert-error">
+              <%= error %>
+            </div>
+          <% } %>
+
+          <form action="/login" method="POST" class="auth-form">
+            <% if (typeof redirect !== 'undefined' && redirect) { %>
+              <input type="hidden" name="redirect" value="<%= redirect %>">
+            <% } %>
+            
+            <div class="form-group">
+              <label for="email">Username or Email</label>
+              <input type="text" id="email" name="email" required autofocus>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+          </form>
+
+          <div class="auth-footer">
+            <p>Don't have an account? <a href="/contact">Contact us</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

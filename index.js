@@ -47,26 +47,6 @@ const knex = require("knex")({
   }
 });
 
-// ============================================
-// MOCK USERS FOR DEVELOPMENT
-// ============================================
-
-const mockUsers = {
-  manager: { 
-    id: 1, 
-    email: 'manager@test.com', 
-    role: 'manager', 
-    firstName: 'Admin', 
-    lastName: 'User' 
-  },
-  user: { 
-    id: 2, 
-    email: 'user@test.com', 
-    role: 'user', 
-    firstName: 'Regular', 
-    lastName: 'User' 
-  },
-};
 
 // ============================================
 // SAMPLE DATA (will come from database later)
@@ -252,18 +232,77 @@ app.get('/db-test', async (req, res) => {
 });
 
 // ============================================
-// DEV ROLE SWITCHER ROUTES
+// AUTHENTICATION ROUTES
 // ============================================
 
-app.get('/dev/switch-role/:role', (req, res) => {
-  const role = req.params.role;
-  if (role === 'public') {
-    req.session.user = null;
-  } else if (mockUsers[role]) {
-    req.session.user = mockUsers[role];
+app.get('/login', (req, res) => {
+  if (req.session.user) {
+    return res.redirect('/dashboard');
   }
-  const redirectTo = req.get('Referer') || '/';
-  res.redirect(redirectTo);
+  res.render('auth/login', { 
+    currentPage: 'login', 
+    pageTitle: 'Login',
+    error: null,
+    redirect: req.query.redirect || null
+  });
+});
+
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  const redirect = req.body.redirect || '/dashboard';
+  
+  try {
+    // Find user by email/username
+    const user = await knex('users')
+      .where('email', email)
+      .orWhere('email', email)
+      .first();
+    
+    if (!user) {
+      return res.render('auth/login', {
+        currentPage: 'login',
+        pageTitle: 'Login',
+        error: 'Invalid username or password',
+        redirect
+      });
+    }
+    
+    // For now, plain text password comparison (add bcrypt later)
+    if (user.password !== password) {
+      return res.render('auth/login', {
+        currentPage: 'login',
+        pageTitle: 'Login',
+        error: 'Invalid username or password',
+        redirect
+      });
+    }
+    
+    // Set session
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role
+    };
+    
+    res.redirect(redirect);
+  } catch (error) {
+    console.error('Login error:', error);
+    res.render('auth/login', {
+      currentPage: 'login',
+      pageTitle: 'Login',
+      error: 'An error occurred. Please try again.',
+      redirect
+    });
+  }
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) console.error('Logout error:', err);
+    res.redirect('/');
+  });
 });
 
 // ============================================
