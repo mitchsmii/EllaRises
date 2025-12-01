@@ -1,0 +1,92 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow"><%= user.role === 'manager' ? 'Admin' : 'View' %></p>
+        <h1>Program <em>Participants</em></h1>
+        <p class="page-lead">
+          <% if (user.role === 'manager') { %>
+            View and manage all program participants.
+          <% } else { %>
+            Browse our community of participants.
+          <% } %>
+        </p>
+        <% if (user.role === 'manager') { %>
+          <div class="hero-actions">
+            <a href="/participants/new" class="btn btn-primary">+ Add Participant</a>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Stats Summary -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="stats-row">
+          <div class="stat-mini">
+            <span class="stat-number"><%= participants.length %></span>
+            <span class="stat-label">Total Participants</span>
+          </div>
+          <div class="stat-mini">
+            <span class="stat-number"><%= participants.filter(p => p.status === 'active').length %></span>
+            <span class="stat-label">Active</span>
+          </div>
+          <div class="stat-mini">
+            <span class="stat-number"><%= participants.filter(p => p.status === 'pending').length %></span>
+            <span class="stat-label">Pending</span>
+          </div>
+          <div class="stat-mini">
+            <span class="stat-number"><%= participants.filter(p => p.status === 'alumni').length %></span>
+            <span class="stat-label">Alumni</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Participants Table -->
+    <section class="section">
+      <div class="container">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>School</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% participants.forEach(participant => { %>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar-placeholder"><%= participant.firstName.charAt(0) %><%= participant.lastName.charAt(0) %></div>
+                      <strong><%= participant.firstName %> <%= participant.lastName %></strong>
+                    </div>
+                  </td>
+                  <td><%= participant.email %></td>
+                  <td><%= participant.school %></td>
+                  <td><%= participant.gradeLevel %></td>
+                  <td><span class="status-badge status-<%= participant.status %>"><%= participant.status %></span></td>
+                  <td>
+                    <div class="action-buttons">
+                      <a href="/participants/<%= participant.id %>" class="btn btn-sm btn-outline">View</a>
+                      <% if (user.role === 'manager') { %>
+                        <a href="/participants/<%= participant.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

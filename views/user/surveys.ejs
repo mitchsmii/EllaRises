@@ -1,0 +1,88 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow"><%= user.role === 'manager' ? 'Admin' : 'My Surveys' %></p>
+        <h1>Program <em>Surveys</em></h1>
+        <p class="page-lead">
+          <% if (user.role === 'manager') { %>
+            Create and manage surveys to gather feedback.
+          <% } else { %>
+            Complete surveys to help us improve our programs.
+          <% } %>
+        </p>
+        <% if (user.role === 'manager') { %>
+          <div class="hero-actions">
+            <a href="/surveys/new" class="btn btn-primary">+ Create Survey</a>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Surveys List -->
+    <section class="section">
+      <div class="container">
+        <% if (user.role === 'manager') { %>
+          <!-- Manager View: All Surveys -->
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Survey</th>
+                  <th>Status</th>
+                  <th>Responses</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% surveys.forEach(survey => { %>
+                  <tr>
+                    <td>
+                      <strong><%= survey.title %></strong>
+                      <br><small class="text-muted"><%= survey.description %></small>
+                    </td>
+                    <td>
+                      <span class="status-badge status-<%= survey.status %>"><%= survey.status %></span>
+                    </td>
+                    <td><%= survey.responses %> responses</td>
+                    <td><%= new Date(survey.createdAt).toLocaleDateString() %></td>
+                    <td>
+                      <div class="action-buttons">
+                        <a href="/surveys/<%= survey.id %>/responses" class="btn btn-sm btn-outline">View Results</a>
+                        <a href="/surveys/<%= survey.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                        <button class="btn btn-sm btn-danger">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <!-- User View: Available Surveys -->
+          <div class="survey-cards">
+            <% surveys.filter(s => s.status === 'active').forEach(survey => { %>
+              <div class="survey-card">
+                <div class="survey-status">
+                  <span class="status-badge status-active">Available</span>
+                </div>
+                <h3><%= survey.title %></h3>
+                <p><%= survey.description %></p>
+                <a href="/surveys/<%= survey.id %>" class="btn btn-primary">Take Survey</a>
+              </div>
+            <% }) %>
+            
+            <% if (surveys.filter(s => s.status === 'active').length === 0) { %>
+              <div class="empty-state">
+                <p>No surveys available at this time. Check back later!</p>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

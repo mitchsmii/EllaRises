@@ -1,0 +1,140 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Welcome Back</p>
+        <h1>Hello, <em><%= user.firstName %></em>!</h1>
+        <p class="page-lead">
+          <% if (user.role === 'manager') { %>
+            You're logged in as a manager. You have full access to manage content across the site.
+          <% } else { %>
+            Here's your personal dashboard where you can view your events, milestones, and more.
+          <% } %>
+        </p>
+      </div>
+    </section>
+
+    <!-- Dashboard Content -->
+    <section class="section">
+      <div class="container">
+        
+        <% if (user.role === 'manager') { %>
+          <!-- Manager Dashboard -->
+          <div class="section-header">
+            <p class="eyebrow">Manager Tools</p>
+            <h2>Quick Actions</h2>
+          </div>
+          
+          <div class="dashboard-grid">
+            <a href="/events" class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <h3>Manage Events</h3>
+              <p>Create, edit, and manage upcoming events</p>
+            </a>
+            
+            <a href="/participants" class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <h3>Manage Participants</h3>
+              <p>View and manage program participants</p>
+            </a>
+            
+            <a href="/milestones" class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <h3>Manage Milestones</h3>
+              <p>Define and assign milestones to participants</p>
+            </a>
+            
+            <a href="/surveys" class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <h3>Manage Surveys</h3>
+              <p>Create surveys and view responses</p>
+            </a>
+            
+            <a href="/donations" class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <h3>View Donations</h3>
+              <p>Track and manage donation records</p>
+            </a>
+            
+            <a href="/admin/users" class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h3>Manage Users</h3>
+              <p>Manage user accounts and permissions</p>
+            </a>
+          </div>
+          
+        <% } else { %>
+          <!-- Regular User Dashboard -->
+          <div class="dashboard-grid">
+            <div class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <h3>My Events</h3>
+              <p>You haven't RSVP'd to any events yet.</p>
+              <a href="/events" class="card-link">Browse Events →</a>
+            </div>
+            
+            <div class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <h3>My Milestones</h3>
+              <p>Track your progress and achievements.</p>
+              <span class="card-link muted">Coming soon</span>
+            </div>
+            
+            <div class="dashboard-card">
+              <div class="dashboard-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <h3>My Surveys</h3>
+              <p>No pending surveys at this time.</p>
+              <span class="card-link muted">Check back later</span>
+            </div>
+          </div>
+        <% } %>
+        
+      </div>
+    </section>
+
+    <!-- Account Section -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-header">
+          <p class="eyebrow">Account</p>
+          <h2>Your Information</h2>
+        </div>
+        
+        <div class="account-info">
+          <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span class="info-value"><%= user.firstName %> <%= user.lastName %></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span class="info-value"><%= user.email %></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Role:</span>
+            <span class="info-value role-badge <%= user.role %>"><%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

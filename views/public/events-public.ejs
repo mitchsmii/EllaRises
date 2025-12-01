@@ -1,0 +1,55 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Events</p>
+        <h1>Join us at our <em>upcoming events</em>.</h1>
+        <p class="page-lead">From workshops to fundraisers, there's always something happening at Ella Rises.</p>
+        <% if (user && user.role === 'manager') { %>
+          <div class="hero-actions">
+            <a href="/manage/events" class="btn btn-primary">Manage Events</a>
+            <a href="/manage/events/new" class="btn btn-outline">+ Add New Event</a>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Events List -->
+    <section class="section">
+      <div class="container">
+        <div class="events-list">
+          <% events.forEach(event => { %>
+            <article class="event-card">
+              <div class="event-date">
+                <span class="month"><%= new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short' }).toUpperCase() %></span>
+                <span class="day"><%= new Date(event.eventDate).getDate() %></span>
+              </div>
+              <div class="event-info">
+                <span class="event-type <%= event.eventType %>"><%= event.eventType %></span>
+                <h3><%= event.title %></h3>
+                <p><%= event.description %></p>
+                <div class="event-details-row">
+                  <span>📍 <%= event.location %></span>
+                  <span>🕐 <%= event.eventTime %></span>
+                  <span>👥 <%= event.registered %>/<%= event.capacity %> registered</span>
+                </div>
+              </div>
+              <div class="event-actions">
+                <% if (user) { %>
+                  <button class="btn btn-primary btn-sm">RSVP</button>
+                <% } else { %>
+                  <a href="/login" class="btn btn-outline btn-sm">Login to RSVP</a>
+                <% } %>
+                <% if (user && user.role === 'manager') { %>
+                  <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+                <% } %>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

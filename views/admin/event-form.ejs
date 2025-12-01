@@ -1,0 +1,70 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1><%= event ? 'Edit' : 'Create' %> <em>Event</em></h1>
+        <p class="page-lead"><%= event ? 'Update event details below.' : 'Fill out the form to create a new event.' %></p>
+      </div>
+    </section>
+
+    <!-- Event Form -->
+    <section class="section">
+      <div class="container">
+        <div class="form-card">
+          <form action="<%= event ? '/manage/events/' + event.id : '/manage/events' %>" method="POST" class="crud-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="title">Event Title *</label>
+                <input type="text" id="title" name="title" value="<%= event ? event.title : '' %>" required>
+              </div>
+              <div class="form-group">
+                <label for="eventType">Event Type *</label>
+                <select id="eventType" name="eventType" required>
+                  <option value="">Select type...</option>
+                  <option value="workshop" <%= event && event.eventType === 'workshop' ? 'selected' : '' %>>Workshop</option>
+                  <option value="community" <%= event && event.eventType === 'community' ? 'selected' : '' %>>Community</option>
+                  <option value="fundraising" <%= event && event.eventType === 'fundraising' ? 'selected' : '' %>>Fundraising</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description *</label>
+              <textarea id="description" name="description" rows="4" required><%= event ? event.description : '' %></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="eventDate">Date *</label>
+                <input type="date" id="eventDate" name="eventDate" value="<%= event ? event.eventDate : '' %>" required>
+              </div>
+              <div class="form-group">
+                <label for="eventTime">Time *</label>
+                <input type="time" id="eventTime" name="eventTime" value="<%= event ? event.eventTime : '' %>" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="location">Location *</label>
+                <input type="text" id="location" name="location" value="<%= event ? event.location : '' %>" required>
+              </div>
+              <div class="form-group">
+                <label for="capacity">Capacity *</label>
+                <input type="number" id="capacity" name="capacity" value="<%= event ? event.capacity : '' %>" min="1" required>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary"><%= event ? 'Update Event' : 'Create Event' %></button>
+              <a href="/manage/events" class="btn btn-outline">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

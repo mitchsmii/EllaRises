@@ -14,13 +14,7 @@
   <header class="site-header">
     <div class="container header-content">
       <a href="/" class="logo-group">
-        <div class="logo-mark" aria-hidden="true">
-          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
-            <path d="M20 8 C12 14, 12 26, 20 32 C28 26, 28 14, 20 8Z" fill="currentColor" opacity="0.3"/>
-            <path d="M14 20 Q20 12, 26 20 Q20 28, 14 20Z" fill="currentColor"/>
-          </svg>
-        </div>
+        <img src="/uploads/logos/ellariseslogo.png" alt="<%= brand.name %> logo" class="logo-mark">
         <span class="brand-name"><%= brand.name %></span>
       </a>
       
@@ -33,7 +27,12 @@
       </nav>
 
       <div class="header-actions">
-        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'contact' ? ' active' : '' %>" href="/contact">Contact</a>
+        <% if (user) { %>
+          <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? ' active' : '' %>" href="/dashboard">Dashboard</a>
+          <span class="nav-user">Hi, <%= user.firstName %></span>
+        <% } else { %>
+          <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'contact' ? ' active' : '' %>" href="/contact">Contact</a>
+        <% } %>
         <a class="btn btn-primary" href="/donate">Donate</a>
         <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">
           <span></span>

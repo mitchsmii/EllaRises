@@ -1,0 +1,83 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1>Donation <em>Records</em></h1>
+        <p class="page-lead">Track and manage all donations to the organization.</p>
+        <div class="hero-actions">
+          <a href="/donations/new" class="btn btn-primary">+ Record Donation</a>
+          <button class="btn btn-outline">Export CSV</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Summary -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="stats-row">
+          <div class="stat-mini stat-highlight">
+            <span class="stat-number">$<%= totalDonations.toLocaleString() %></span>
+            <span class="stat-label">Total Donations</span>
+          </div>
+          <div class="stat-mini">
+            <span class="stat-number"><%= donations.length %></span>
+            <span class="stat-label">Total Gifts</span>
+          </div>
+          <div class="stat-mini">
+            <span class="stat-number">$<%= Math.round(totalDonations / donations.length).toLocaleString() %></span>
+            <span class="stat-label">Average Gift</span>
+          </div>
+          <div class="stat-mini">
+            <span class="stat-number"><%= donations.filter(d => new Date(d.donationDate).getMonth() === new Date().getMonth()).length %></span>
+            <span class="stat-label">This Month</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Donations Table -->
+    <section class="section">
+      <div class="container">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Donor</th>
+                <th>Amount</th>
+                <th>Designation</th>
+                <th>Method</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% donations.forEach(donation => { %>
+                <tr>
+                  <td><%= new Date(donation.donationDate).toLocaleDateString() %></td>
+                  <td>
+                    <strong><%= donation.donorName %></strong>
+                    <% if (donation.donorEmail) { %>
+                      <br><small class="text-muted"><%= donation.donorEmail %></small>
+                    <% } %>
+                  </td>
+                  <td class="amount-cell">$<%= donation.amount.toLocaleString() %></td>
+                  <td><%= donation.designation %></td>
+                  <td><%= donation.paymentMethod %></td>
+                  <td>
+                    <div class="action-buttons">
+                      <a href="/donations/<%= donation.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                      <button class="btn btn-sm btn-danger">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

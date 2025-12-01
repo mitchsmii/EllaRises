@@ -5,13 +5,7 @@
       <div class="footer-top">
         <div class="footer-brand">
           <a href="/" class="logo-group">
-            <div class="logo-mark" aria-hidden="true">
-              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
-                <path d="M20 8 C12 14, 12 26, 20 32 C28 26, 28 14, 20 8Z" fill="currentColor" opacity="0.3"/>
-                <path d="M14 20 Q20 12, 26 20 Q20 28, 14 20Z" fill="currentColor"/>
-              </svg>
-            </div>
+            <img src="/uploads/logos/ellariseslogo.png" alt="<%= brand.name %> logo" class="logo-mark">
             <span class="brand-name"><%= brand.name %></span>
           </a>
           <p class="footer-tagline"><%= brand.tagline %></p>
@@ -69,6 +63,19 @@
       </div>
     </div>
   </footer>
+
+  <!-- Dev Role Switcher (remove in production) -->
+  <div class="dev-toolbar">
+    <span class="dev-label">DEV MODE - View as:</span>
+    <a href="/dev/switch-role/public" class="dev-btn <%= !user ? 'active' : '' %>">Public</a>
+    <a href="/dev/switch-role/user" class="dev-btn <%= user && user.role === 'user' ? 'active' : '' %>">User</a>
+    <a href="/dev/switch-role/manager" class="dev-btn <%= user && user.role === 'manager' ? 'active' : '' %>">Manager</a>
+    <% if (user) { %>
+      <span class="dev-user">Logged in as: <%= user.firstName %> <%= user.lastName %> (<%= user.role %>)</span>
+    <% } else { %>
+      <span class="dev-user">Not logged in</span>
+    <% } %>
+  </div>
 
   <script>
     // Mobile navigation toggle

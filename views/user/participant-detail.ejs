@@ -1,0 +1,82 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Participant Profile</p>
+        <h1><%= participant.firstName %> <em><%= participant.lastName %></em></h1>
+        <p class="page-lead"><%= participant.school %> • <%= participant.gradeLevel %></p>
+        <% if (user.role === 'manager') { %>
+          <div class="hero-actions">
+            <a href="/participants/<%= participant.id %>/edit" class="btn btn-primary">Edit Profile</a>
+            <a href="/participants" class="btn btn-outline">Back to All</a>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Profile Content -->
+    <section class="section">
+      <div class="container">
+        <div class="profile-grid">
+          <!-- Contact Info -->
+          <div class="profile-card">
+            <h3>Contact Information</h3>
+            <div class="info-list">
+              <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value"><%= participant.email %></span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value"><%= participant.phone %></span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="status-badge status-<%= participant.status %>"><%= participant.status %></span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Join Date:</span>
+                <span class="info-value"><%= new Date(participant.joinDate).toLocaleDateString() %></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Milestones Progress -->
+          <div class="profile-card">
+            <div class="card-header">
+              <h3>Milestones Progress</h3>
+              <% if (user.role === 'manager') { %>
+                <button class="btn btn-sm btn-outline">+ Assign Milestone</button>
+              <% } %>
+            </div>
+            
+            <div class="milestone-progress">
+              <div class="progress-circle">
+                <span class="progress-number"><%= milestones.length %></span>
+                <span class="progress-label">of <%= allMilestones.length %> completed</span>
+              </div>
+            </div>
+
+            <div class="milestone-list">
+              <% if (milestones.length > 0) { %>
+                <% milestones.forEach(m => { %>
+                  <div class="milestone-item completed">
+                    <span class="milestone-check">✓</span>
+                    <div class="milestone-info">
+                      <strong><%= m.milestoneTitle %></strong>
+                      <small>Completed <%= new Date(m.completedAt).toLocaleDateString() %></small>
+                    </div>
+                  </div>
+                <% }) %>
+              <% } else { %>
+                <p class="text-muted">No milestones completed yet.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

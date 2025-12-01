@@ -1,0 +1,67 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1>Manage <em>Events</em></h1>
+        <p class="page-lead">Create, edit, and manage all events.</p>
+        <div class="hero-actions">
+          <a href="/manage/events/new" class="btn btn-primary">+ Create New Event</a>
+          <a href="/events" class="btn btn-outline">View Public Page</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Events Table -->
+    <section class="section">
+      <div class="container">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Event</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Registration</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% events.forEach(event => { %>
+                <tr>
+                  <td>
+                    <div class="date-cell">
+                      <span class="date-month"><%= new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short' }) %></span>
+                      <span class="date-day"><%= new Date(event.eventDate).getDate() %></span>
+                    </div>
+                  </td>
+                  <td>
+                    <strong><%= event.title %></strong>
+                    <br><small class="text-muted"><%= event.eventTime %></small>
+                  </td>
+                  <td><span class="badge badge-<%= event.eventType %>"><%= event.eventType %></span></td>
+                  <td><%= event.location %></td>
+                  <td>
+                    <div class="progress-mini">
+                      <div class="progress-bar" style="width: <%= (event.registered / event.capacity) * 100 %>%"></div>
+                    </div>
+                    <small><%= event.registered %>/<%= event.capacity %></small>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <a href="/manage/events/<%= event.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                      <button class="btn btn-sm btn-danger">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

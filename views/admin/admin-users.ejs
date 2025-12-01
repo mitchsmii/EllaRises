@@ -1,0 +1,64 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1>User <em>Management</em></h1>
+        <p class="page-lead">Manage user accounts and permissions.</p>
+        <div class="hero-actions">
+          <a href="/admin/users/new" class="btn btn-primary">+ Add User</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Users Table -->
+    <section class="section">
+      <div class="container">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% users.forEach(u => { %>
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="avatar-placeholder"><%= u.firstName.charAt(0) %><%= u.lastName.charAt(0) %></div>
+                      <strong><%= u.firstName %> <%= u.lastName %></strong>
+                    </div>
+                  </td>
+                  <td><%= u.email %></td>
+                  <td>
+                    <span class="role-badge <%= u.role %>"><%= u.role %></span>
+                  </td>
+                  <td>
+                    <span class="status-badge status-<%= u.status %>"><%= u.status %></span>
+                  </td>
+                  <td><%= new Date(u.createdAt).toLocaleDateString() %></td>
+                  <td>
+                    <div class="action-buttons">
+                      <a href="/admin/users/<%= u.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                      <% if (u.id !== user.id) { %>
+                        <button class="btn btn-sm btn-danger">Deactivate</button>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+.env
+*.log
+*.zip
+
+# Uploaded images (keep folder structure with .gitkeep)
+public/uploads/**/*
+!public/uploads/**/.gitkeep

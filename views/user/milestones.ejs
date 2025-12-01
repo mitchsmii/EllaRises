@@ -1,0 +1,88 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow"><%= user.role === 'manager' ? 'Admin' : 'View' %></p>
+        <h1>Program <em>Milestones</em></h1>
+        <p class="page-lead">Track achievements and progress through the program.</p>
+        <% if (user.role === 'manager') { %>
+          <div class="hero-actions">
+            <a href="/milestones/new" class="btn btn-primary">+ Create Milestone</a>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Milestone Templates -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Milestone Templates</h2>
+          <p class="text-muted">These are the milestones that can be assigned to participants.</p>
+        </div>
+
+        <div class="milestone-grid">
+          <% milestones.forEach(milestone => { %>
+            <div class="milestone-card">
+              <div class="milestone-header">
+                <span class="milestone-category"><%= milestone.category %></span>
+                <span class="milestone-points"><%= milestone.points %> pts</span>
+              </div>
+              <h3><%= milestone.title %></h3>
+              <p><%= milestone.description %></p>
+              <% if (user.role === 'manager') { %>
+                <div class="milestone-actions">
+                  <button class="btn btn-sm btn-outline">Edit</button>
+                  <button class="btn btn-sm btn-outline">Assign</button>
+                </div>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent Completions -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-header">
+          <h2>Recent Completions</h2>
+          <p class="text-muted">Latest milestone achievements by participants.</p>
+        </div>
+
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Participant</th>
+                <th>Milestone</th>
+                <th>Completed</th>
+                <% if (user.role === 'manager') { %>
+                  <th>Actions</th>
+                <% } %>
+              </tr>
+            </thead>
+            <tbody>
+              <% participantMilestones.forEach(pm => { %>
+                <tr>
+                  <td>
+                    <a href="/participants/<%= pm.participantId %>"><%= pm.participantName %></a>
+                  </td>
+                  <td><%= pm.milestoneTitle %></td>
+                  <td><%= new Date(pm.completedAt).toLocaleDateString() %></td>
+                  <% if (user.role === 'manager') { %>
+                    <td>
+                      <button class="btn btn-sm btn-danger">Remove</button>
+                    </td>
+                  <% } %>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+
