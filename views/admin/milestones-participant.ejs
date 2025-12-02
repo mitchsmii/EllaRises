@@ -1,0 +1,202 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1><%= participant.firstname %> <%= participant.lastname %> - <em>Milestones</em></h1>
+        <p class="page-lead">View and manage completed milestones for this participant.</p>
+      </div>
+    </section>
+
+    <!-- Participant Info -->
+    <section class="section">
+      <div class="container">
+        <div class="participant-info-card">
+          <div class="participant-header">
+            <div class="avatar-placeholder large">
+              <%= (participant.firstname || 'N').charAt(0) %><%= (participant.lastname || 'A').charAt(0) %>
+            </div>
+            <div>
+              <h2><%= participant.firstname %> <%= participant.lastname %></h2>
+              <p class="participant-email"><%= participant.email %></p>
+              <% if (participant.city) { %>
+                <p class="participant-location"><%= participant.city %><% if (participant.state) { %>, <%= participant.state %><% } %></p>
+              <% } %>
+            </div>
+          </div>
+          <div class="participant-actions">
+            <a href="/manage/milestones" class="btn btn-outline">← Back to Search</a>
+            <button class="btn btn-primary" id="addMilestoneBtn">Add New Milestone</button>
+          </div>
+        </div>
+
+        <% if (message) { %>
+          <div class="alert alert-<%= messageType === 'success' ? 'success' : 'error' %>" style="margin-top: var(--space-lg);">
+            <%= message %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Completed Milestones -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-header">
+          <h2>Completed Milestones</h2>
+          <p class="text-muted"><%= completedMilestones.length %> milestone<%= completedMilestones.length !== 1 ? 's' : '' %> completed</p>
+        </div>
+
+        <% if (completedMilestones.length > 0) { %>
+          <div class="milestones-grid">
+            <% completedMilestones.forEach(milestone => { %>
+              <div class="milestone-card completed">
+                <div class="milestone-completed-badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  Completed
+                </div>
+                <div class="milestone-header">
+                  <span class="milestone-category">Milestone #<%= milestone.milestoneno %></span>
+                </div>
+                <h3><%= milestone.milestonetitle %></h3>
+                <p class="milestone-date">Completed on <%= new Date(milestone.milestonedate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></p>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No completed milestones yet.</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Incomplete Milestones (if any) -->
+    <% if (incompleteMilestones.length > 0) { %>
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Incomplete Milestones</h2>
+          <p class="text-muted"><%= incompleteMilestones.length %> milestone<%= incompleteMilestones.length !== 1 ? 's' : '' %> not yet completed</p>
+        </div>
+        <div class="milestones-grid">
+          <% incompleteMilestones.forEach(milestone => { %>
+            <div class="milestone-card">
+              <div class="milestone-header">
+                <span class="milestone-category">Milestone #<%= milestone.milestoneno %></span>
+              </div>
+              <h3><%= milestone.milestonetitle %></h3>
+              <p class="milestone-status">Not yet completed</p>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
+    <!-- Add Milestone Modal -->
+    <div id="milestoneModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add New Milestone</h2>
+          <button class="modal-close" id="closeModal">&times;</button>
+        </div>
+        <form id="milestoneForm">
+          <input type="hidden" name="personid" id="modalPersonId" value="<%= participant.personid %>">
+          <div class="form-group">
+            <label for="milestonetitle">Milestone Title</label>
+            <input type="text" id="milestonetitle" name="milestonetitle" required class="form-control" placeholder="e.g., High School Diploma">
+            <small class="form-help">The milestone will be automatically numbered based on existing milestones for this participant.</small>
+          </div>
+          <div class="form-group">
+            <label for="milestonedate">Completion Date</label>
+            <input type="date" id="milestonedate" name="milestonedate" required class="form-control">
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" id="cancelModal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Milestone</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Modal functionality
+      const modal = document.getElementById('milestoneModal');
+      const addMilestoneBtn = document.getElementById('addMilestoneBtn');
+      const closeModal = document.getElementById('closeModal');
+      const cancelModal = document.getElementById('cancelModal');
+      const form = document.getElementById('milestoneForm');
+
+      addMilestoneBtn.addEventListener('click', () => {
+        // Reset form
+        form.reset();
+        // Set today's date as default
+        document.getElementById('milestonedate').valueAsDate = new Date();
+        modal.style.display = 'flex';
+      });
+
+      closeModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+
+      cancelModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+
+      window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+
+      // Handle form submission via AJAX
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+
+        // Get form values
+        const formData = new FormData(form);
+        const data = {
+          personid: formData.get('personid'),
+          milestonetitle: formData.get('milestonetitle'),
+          milestonedate: formData.get('milestonedate')
+        };
+
+        try {
+          const response = await fetch('/manage/milestones/assign', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            // Redirect to the same page with success message
+            if (result.redirect) {
+              window.location.href = result.redirect;
+            } else {
+              window.location.reload();
+            }
+          } else {
+            alert('Error: ' + result.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+          }
+        } catch (error) {
+          alert('Error adding milestone: ' + error.message);
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }
+      });
+    </script>
+
+<%- include('../partials/footer') %>
+

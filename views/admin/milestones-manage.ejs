@@ -1,0 +1,71 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1>Manage <em>Milestones</em></h1>
+        <p class="page-lead">Search for participants and assign completed milestones.</p>
+      </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Find Participant</h2>
+          <p class="text-muted">Search by first name or last name to find a participant.</p>
+        </div>
+
+        <form method="GET" action="/manage/milestones" class="search-form">
+          <input 
+            type="text" 
+            name="search" 
+            placeholder="Enter first or last name..." 
+            value="<%= search || '' %>"
+            class="search-input"
+            autofocus
+          >
+          <button type="submit" class="btn btn-primary">Search</button>
+          <% if (search) { %>
+            <a href="/manage/milestones" class="btn btn-outline">Clear</a>
+          <% } %>
+        </form>
+
+        <% if (search && participants && participants.length > 0) { %>
+          <div class="participants-results">
+            <h3>Search Results (<%= participants.length %> found)</h3>
+            <div class="participants-grid">
+              <% participants.forEach(participant => { %>
+                <div class="participant-card" data-personid="<%= participant.personid %>">
+                  <div class="participant-header">
+                    <div class="avatar-placeholder">
+                      <%= (participant.firstname || 'N').charAt(0) %><%= (participant.lastname || 'A').charAt(0) %>
+                    </div>
+                    <div>
+                      <h4><a href="/manage/milestones/<%= participant.personid %>" class="participant-name-link"><%= participant.firstname %> <%= participant.lastname %></a></h4>
+                      <p class="participant-email"><%= participant.email %></p>
+                    </div>
+                  </div>
+                  <div class="participant-info">
+                    <p><strong>ID:</strong> <%= participant.personid %></p>
+                    <% if (participant.city) { %>
+                      <p><strong>Location:</strong> <%= participant.city %><% if (participant.state) { %>, <%= participant.state %><% } %></p>
+                    <% } %>
+                  </div>
+                  <a href="/manage/milestones/<%= participant.personid %>" class="btn btn-primary btn-sm">View Milestones</a>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% } else if (search && participants && participants.length === 0) { %>
+          <div class="empty-state">
+            <p>No participants found matching "<%= search %>".</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+
+<%- include('../partials/footer') %>
+

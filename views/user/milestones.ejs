@@ -1,21 +1,5 @@
 <%- include('../partials/header') %>
 
-    <%
-      // Calculate progress stats
-      const totalMilestones = milestones.length;
-      const totalPoints = milestones.reduce((sum, m) => sum + m.points, 0);
-      const uniqueParticipants = [...new Set(participantMilestones.map(pm => pm.participantId))].length;
-      const totalCompletions = participantMilestones.length;
-      
-      // For demo: simulate a user's progress (3 out of 8 milestones completed)
-      const userCompletedCount = 3;
-      const userEarnedPoints = 35; // Orientation (10) + Mentor Meeting (15) + Workshop (10)
-      const progressPercent = Math.round((userCompletedCount / totalMilestones) * 100);
-      
-      // Get completed milestone IDs for this user (demo)
-      const userCompletedMilestones = [1, 2, 3];
-    %>
-
     <!-- Page Hero -->
     <section class="page-hero">
       <div class="container">
@@ -30,57 +14,43 @@
       </div>
     </section>
 
-    <!-- Milestone Templates -->
+    <!-- User's Milestones (for regular users) -->
+    <% if (user.role !== 'manager') { %>
     <section class="section">
       <div class="container">
         <div class="section-header">
-          <h2><%= user.role === 'manager' ? 'Milestone Templates' : 'All Milestones' %></h2>
-          <p class="text-muted"><%= user.role === 'manager' ? 'These are the milestones that can be assigned to participants.' : 'Complete milestones to earn points and track your journey.' %></p>
+          <h2>Your Milestones</h2>
+          <p class="text-muted">You have completed <strong><%= userCompletedCount %></strong> milestone<%= userCompletedCount !== 1 ? 's' : '' %>.</p>
         </div>
 
-        <% if (user.role !== 'manager') { %>
-          <!-- User Progress Bar -->
-          <div class="user-progress-card">
-            <div class="progress-header">
-              <span class="progress-label"><%= userCompletedCount %> of <%= totalMilestones %> completed</span>
-              <span class="progress-percentage"><%= progressPercent %>%</span>
-            </div>
-            <div class="progress-bar-container">
-              <div class="progress-bar" style="width: <%= progressPercent %>%"></div>
-            </div>
-          </div>
-        <% } %>
-
-        <div class="milestone-grid">
-          <% milestones.forEach(milestone => { 
-            const isCompleted = userCompletedMilestones.includes(milestone.id);
-          %>
-            <div class="milestone-card <%= isCompleted ? 'completed' : '' %>">
-              <% if (isCompleted && user.role !== 'manager') { %>
+        <% if (userMilestones && userMilestones.length > 0) { %>
+          <div class="milestone-grid">
+            <% userMilestones.forEach(milestone => { %>
+              <div class="milestone-card completed">
                 <div class="milestone-completed-badge">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                   Completed
                 </div>
-              <% } %>
-              <div class="milestone-header">
-                <span class="milestone-category"><%= milestone.category %></span>
-                <span class="milestone-points"><%= milestone.points %> pts</span>
-              </div>
-              <h3><%= milestone.title %></h3>
-              <p><%= milestone.description %></p>
-              <% if (user.role === 'manager') { %>
-                <div class="milestone-actions">
-                  <button class="btn btn-sm btn-outline">Edit</button>
-                  <button class="btn btn-sm btn-outline">Assign</button>
+                <div class="milestone-header">
+                  <span class="milestone-category">Achievement</span>
                 </div>
-              <% } %>
-            </div>
-          <% }) %>
-        </div>
+                <h3><%= milestone.milestonetitle %></h3>
+                <p class="milestone-date">Completed on <%= new Date(milestone.milestonedate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></p>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>You haven't completed any milestones yet. Keep working toward your goals!</p>
+          </div>
+        <% } %>
       </div>
     </section>
 
-    <!-- Recent Completions -->
+    <% } %>
+
+    <% if (user.role === 'manager') { %>
+    <!-- Manager View: Recent Completions -->
     <section class="section section-alt">
       <div class="container">
         <div class="section-header">
@@ -88,6 +58,7 @@
           <p class="text-muted">Latest milestone achievements by participants.</p>
         </div>
 
+        <% if (participantMilestones && participantMilestones.length > 0) { %>
         <div class="data-table-wrapper">
           <table class="data-table">
             <thead>
@@ -95,9 +66,7 @@
                 <th>Participant</th>
                 <th>Milestone</th>
                 <th>Completed</th>
-                <% if (user.role === 'manager') { %>
-                  <th>Actions</th>
-                <% } %>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -108,18 +77,22 @@
                   </td>
                   <td><%= pm.milestoneTitle %></td>
                   <td><%= new Date(pm.completedAt).toLocaleDateString() %></td>
-                  <% if (user.role === 'manager') { %>
-                    <td>
-                      <button class="btn btn-sm btn-danger">Remove</button>
-                    </td>
-                  <% } %>
+                  <td>
+                    <button class="btn btn-sm btn-danger">Remove</button>
+                  </td>
                 </tr>
               <% }) %>
             </tbody>
           </table>
         </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No milestone completions recorded yet.</p>
+          </div>
+        <% } %>
       </div>
     </section>
+    <% } %>
 
 <%- include('../partials/footer') %>
 

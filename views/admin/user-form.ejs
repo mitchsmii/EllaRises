@@ -1,0 +1,98 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1><%= user ? 'Edit' : 'Add New' %> <em>User</em></h1>
+        <p class="page-lead"><%= user ? 'Update user account information and permissions.' : 'Create a new user account with login credentials and role.' %></p>
+      </div>
+    </section>
+
+    <!-- User Form -->
+    <section class="section">
+      <div class="container">
+        <div class="form-card">
+          <% if (error) { %>
+            <div class="alert alert-error" style="margin-bottom: var(--space-xl);">
+              <%= error %>
+            </div>
+          <% } %>
+
+          <form method="POST" action="<%= user ? '/admin/users/' + encodeURIComponent(user.email) : '/admin/users' %>">
+            <div class="form-group">
+              <label for="email">Email Address *</label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-control" 
+                value="<%= user ? user.email : '' %>"
+                required
+                <%= user ? 'readonly' : '' %>
+                placeholder="user@example.com"
+              >
+              <% if (user) { %>
+                <small class="form-help">Email cannot be changed after account creation.</small>
+              <% } %>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password <%= user ? '' : '*' %></label>
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-control" 
+                <%= user ? '' : 'required' %>
+                placeholder="<%= user ? 'Leave blank to keep current password' : 'Enter password' %>"
+              >
+              <% if (user) { %>
+                <small class="form-help">Leave blank to keep the current password.</small>
+              <% } %>
+            </div>
+
+            <div class="form-group">
+              <label for="level">Role *</label>
+              <select id="level" name="level" class="form-control" required>
+                <option value="user" <%= user && user.level === 'user' ? 'selected' : '' %>>User</option>
+                <option value="manager" <%= user && (user.level === 'manager' || user.level === 'admin') ? 'selected' : '' %>>Manager</option>
+              </select>
+              <small class="form-help">Managers can manage all data and user accounts. Users can only view their own data.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="firstname">First Name</label>
+              <input 
+                type="text" 
+                id="firstname" 
+                name="firstname" 
+                class="form-control" 
+                value="<%= user ? user.firstname : '' %>"
+                placeholder="John"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="lastname">Last Name</label>
+              <input 
+                type="text" 
+                id="lastname" 
+                name="lastname" 
+                class="form-control" 
+                value="<%= user ? user.lastname : '' %>"
+                placeholder="Doe"
+              >
+            </div>
+
+            <div class="form-actions">
+              <a href="/admin/users" class="btn btn-outline">Cancel</a>
+              <button type="submit" class="btn btn-primary"><%= user ? 'Update User' : 'Create User' %></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

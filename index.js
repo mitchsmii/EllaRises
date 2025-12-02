@@ -17,6 +17,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+
+
+
+
+
+
+
+
+
 // ============================================
 // SESSION CONFIGURATION
 // ============================================
@@ -30,6 +39,14 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
+
+
+
+
+
+
+
+
 
 // ============================================
 // Knex Connection
@@ -104,6 +121,17 @@ const sampleDonations = [
   { id: 6, donorName: 'David Chen', donorEmail: 'dchen@example.com', amount: 250, designation: 'Scholarships', donationDate: '2024-12-08', paymentMethod: 'Credit Card' },
 ];
 
+
+
+
+
+
+
+
+
+
+
+
 // ============================================
 // MULTER IMAGE UPLOAD CONFIGURATION
 // ============================================
@@ -174,6 +202,15 @@ const stories = [
   { quote: 'My mentor helped me land my first internship and reminded me that my voice matters.', name: 'Jasmine, college scholar' },
 ];
 
+
+
+
+
+
+
+
+
+
 // ============================================
 // MIDDLEWARE
 // ============================================
@@ -184,6 +221,16 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
+
+
+
+
+
+
+
+
+
+
 
 // ============================================
 // AUTH HELPER MIDDLEWARE
@@ -200,7 +247,8 @@ function requireManager(req, res, next) {
   if (!req.session.user) {
     return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
   }
-  if (req.session.user.role !== 'manager') {
+  // Check for both 'manager' and 'admin' roles
+  if (req.session.user.role !== 'manager' && req.session.user.role !== 'admin') {
     return res.status(403).render('errors/403', {
       currentPage: '403',
       pageTitle: 'Access Denied',
@@ -210,26 +258,13 @@ function requireManager(req, res, next) {
   next();
 }
 
-// ============================================
-// DATABASE TEST ROUTE (remove after testing)
-// ============================================
 
-app.get('/db-test', async (req, res) => {
-  try {
-    const result = await knex.raw('SELECT NOW() as current_time');
-    res.json({
-      success: true,
-      message: 'Database connection successful!',
-      serverTime: result.rows[0].current_time
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Database connection failed',
-      error: error.message
-    });
-  }
-});
+
+
+
+
+
+
 
 // ============================================
 // AUTHENTICATION ROUTES
@@ -252,13 +287,12 @@ app.post('/login', async (req, res) => {
   const redirect = req.body.redirect || '/dashboard';
   
   try {
-    // Find user by email/username
-    const user = await knex('users')
+    // Find user in login table
+    const loginUser = await knex('login')
       .where('email', email)
-      .orWhere('email', email)
       .first();
     
-    if (!user) {
+    if (!loginUser) {
       return res.render('auth/login', {
         currentPage: 'login',
         pageTitle: 'Login',
@@ -267,8 +301,8 @@ app.post('/login', async (req, res) => {
       });
     }
     
-    // For now, plain text password comparison (add bcrypt later)
-    if (user.password !== password) {
+    // Plain text password comparison (add bcrypt later)
+    if (loginUser.password !== password) {
       return res.render('auth/login', {
         currentPage: 'login',
         pageTitle: 'Login',
@@ -277,13 +311,20 @@ app.post('/login', async (req, res) => {
       });
     }
     
-    // Set session
+    // Try to get person details from people table (if linked)
+    const person = await knex('people')
+      .where('email', loginUser.email)
+      .first();
+    
+    // Set session with user info
+    // Normalize 'admin' to 'manager' for consistency
+    const userRole = loginUser.level === 'admin' ? 'manager' : (loginUser.level || 'user');
+    
     req.session.user = {
-      id: user.id,
-      email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      role: user.role
+      email: loginUser.email,
+      firstName: person ? person.firstname : (loginUser.email === 'admin' ? 'Admin' : 'User'),
+      lastName: person ? person.lastname : '',
+      role: userRole
     };
     
     res.redirect(redirect);
@@ -304,6 +345,12 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
   });
 });
+
+
+
+
+
+
 
 // ============================================
 // IMAGE UPLOAD ROUTES
@@ -349,6 +396,12 @@ app.delete('/api/images/:category/:filename', (req, res) => {
   }
 });
 
+
+
+
+
+
+
 // ============================================
 // PUBLIC PAGE ROUTES (views/public/)
 // ============================================
@@ -369,8 +422,40 @@ app.get('/stories', (req, res) => {
   res.render('public/stories', { currentPage: 'stories', pageTitle: 'Success Stories', pageDescription: 'Read inspiring stories from the women and girls we serve.', stories });
 });
 
-app.get('/events', (req, res) => {
-  res.render('public/events-public', { currentPage: 'events', pageTitle: 'Events', pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', events: sampleEvents });
+app.get('/events', async (req, res) => {
+  try {
+    // Join events with event_details to get full event info
+    const events = await knex('events')
+      .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
+      .select(
+        'events.eventid as id',
+        'events.eventname as title',
+        'events.eventtype as eventType',
+        'events.eventdescription as description',
+        'events.eventrecurrence as recurrence',
+        'event_details.eventdatetimestart as eventDate',
+        'event_details.eventregistrationdeadline as registrationDeadline',
+        'event_details.eventcapacity as capacity',
+        'event_details.eventlocation as location'
+      )
+      .orderBy('event_details.eventdatetimestart', 'desc')
+      .limit(10);
+    
+    res.render('public/events-public', { 
+      currentPage: 'events', 
+      pageTitle: 'Events', 
+      pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', 
+      events 
+    });
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.render('public/events-public', { 
+      currentPage: 'events', 
+      pageTitle: 'Events', 
+      pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', 
+      events: [] 
+    });
+  }
 });
 
 app.get('/get-involved', (req, res) => {
@@ -392,6 +477,13 @@ app.get('/resources', (req, res) => {
 app.post('/contact', (req, res) => {
   res.redirect('/contact?success=true');
 });
+
+
+
+
+
+
+
 
 // ============================================
 // USER PAGES (views/user/) - requires login
@@ -422,14 +514,65 @@ app.get('/participants/:id', requireLogin, (req, res) => {
   });
 });
 
-app.get('/milestones', requireLogin, (req, res) => {
-  res.render('user/milestones', { 
-    currentPage: 'milestones', 
-    pageTitle: 'Milestones', 
-    milestones: sampleMilestones,
-    participantMilestones: sampleParticipantMilestones,
-    participants: sampleParticipants
-  });
+app.get('/milestones', requireLogin, async (req, res) => {
+  try {
+    // Get the logged-in user's personid first
+    const loggedInPerson = await knex('people')
+      .where('email', req.session.user.email)
+      .first();
+
+    // Get the logged-in user's milestones (matching by personid AND has a completion date)
+    let userMilestones = [];
+    if (loggedInPerson) {
+      userMilestones = await knex('milestones')
+        .select(
+          'milestoneid',
+          'personid',
+          'milestoneno',
+          'milestonetitle',
+          'milestonedate'
+        )
+        .where('personid', loggedInPerson.personid)
+        .whereNotNull('milestonedate')  // Only completed milestones (has a date)
+        .orderBy('milestonedate', 'desc');
+    }
+
+    // Calculate progress (user's completed milestones)
+    const userCompletedCount = userMilestones.length;
+
+    // For managers: get recent completions across all users
+    let participantMilestones = [];
+    if (req.session.user.role === 'manager') {
+      participantMilestones = await knex('milestones')
+        .join('people', 'milestones.personid', 'people.personid')
+        .select(
+          'milestones.milestoneid',
+          'milestones.personid as participantId',
+          'milestones.milestonetitle as milestoneTitle',
+          'milestones.milestonedate as completedAt',
+          knex.raw("CONCAT(people.firstname, ' ', people.lastname) as participantName")
+        )
+        .orderBy('milestones.milestonedate', 'desc')
+        .limit(20);
+    }
+
+    res.render('user/milestones', { 
+      currentPage: 'milestones', 
+      pageTitle: 'Milestones', 
+      userMilestones,
+      userCompletedCount,
+      participantMilestones
+    });
+  } catch (error) {
+    console.error('Error fetching milestones:', error);
+    res.render('user/milestones', { 
+      currentPage: 'milestones', 
+      pageTitle: 'Milestones', 
+      userMilestones: [],
+      userCompletedCount: 0,
+      participantMilestones: []
+    });
+  }
 });
 
 app.get('/surveys', requireLogin, (req, res) => {
@@ -439,6 +582,16 @@ app.get('/surveys', requireLogin, (req, res) => {
     surveys: sampleSurveys 
   });
 });
+
+
+
+
+
+
+
+
+
+
 
 // ============================================
 // ADMIN PAGES (views/admin/) - requires manager
@@ -480,19 +633,470 @@ app.get('/donations', requireManager, (req, res) => {
   });
 });
 
-app.get('/admin/users', requireManager, (req, res) => {
-  const allUsers = [
-    { id: 1, email: 'manager@test.com', firstName: 'Admin', lastName: 'User', role: 'manager', status: 'active', createdAt: '2024-01-01' },
-    { id: 2, email: 'user@test.com', firstName: 'Regular', lastName: 'User', role: 'user', status: 'active', createdAt: '2024-06-15' },
-    { id: 3, email: 'maria@example.com', firstName: 'Maria', lastName: 'Garcia', role: 'user', status: 'active', createdAt: '2024-09-01' },
-    { id: 4, email: 'jasmine@example.com', firstName: 'Jasmine', lastName: 'Williams', role: 'user', status: 'active', createdAt: '2024-08-15' },
-  ];
-  res.render('admin/admin-users', { 
-    currentPage: 'admin', 
-    pageTitle: 'Manage Users', 
-    users: allUsers 
+app.get('/manage/milestones', requireManager, async (req, res) => {
+  try {
+    const search = req.query.search || '';
+    let participants = [];
+
+    if (search) {
+      // Search for participants by first name or last name
+      participants = await knex('people')
+        .select('personid', 'email', 'firstname', 'lastname', 'city', 'state')
+        .where(function() {
+          this.where('firstname', 'ilike', `%${search}%`)
+            .orWhere('lastname', 'ilike', `%${search}%`);
+        })
+        .orderBy('lastname', 'asc')
+        .limit(50);
+    }
+
+    res.render('admin/milestones-manage', {
+      currentPage: 'milestones',
+      pageTitle: 'Manage Milestones',
+      search,
+      participants
+    });
+  } catch (error) {
+    console.error('Error searching participants:', error);
+    res.render('admin/milestones-manage', {
+      currentPage: 'milestones',
+      pageTitle: 'Manage Milestones',
+      search: '',
+      participants: []
+    });
+  }
+});
+
+app.get('/manage/milestones/:personid', requireManager, async (req, res) => {
+  try {
+    const personid = parseInt(req.params.personid);
+
+    // Get participant info
+    const participant = await knex('people')
+      .where('personid', personid)
+      .first();
+
+    if (!participant) {
+      return res.status(404).render('errors/404', {
+        currentPage: 'milestones',
+        pageTitle: 'Participant Not Found'
+      });
+    }
+
+    // Get all milestones for this participant (both completed and incomplete)
+    const allMilestones = await knex('milestones')
+      .where('personid', personid)
+      .orderBy('milestoneno', 'asc');
+
+    // Separate completed and incomplete milestones
+    const completedMilestones = allMilestones.filter(m => m.milestonedate !== null);
+    const incompleteMilestones = allMilestones.filter(m => m.milestonedate === null);
+
+    res.render('admin/milestones-participant', {
+      currentPage: 'milestones',
+      pageTitle: `Milestones - ${participant.firstname} ${participant.lastname}`,
+      participant,
+      completedMilestones,
+      incompleteMilestones,
+      message: req.query.message || null,
+      messageType: req.query.messageType || null
+    });
+  } catch (error) {
+    console.error('Error fetching participant milestones:', error);
+    res.status(500).render('errors/500', {
+      currentPage: 'milestones',
+      pageTitle: 'Error',
+      message: 'Failed to load participant milestones.'
+    });
+  }
+});
+
+app.post('/manage/milestones/assign', requireManager, async (req, res) => {
+  try {
+    const { personid, milestonetitle, milestonedate } = req.body;
+
+    // Validate required fields
+    if (!personid || !milestonetitle || !milestonedate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'All fields are required' 
+      });
+    }
+
+    // Verify person exists
+    const person = await knex('people')
+      .where('personid', personid)
+      .first();
+
+    if (!person) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Participant not found' 
+      });
+    }
+
+    // Get the highest milestoneno for this person
+    const lastMilestone = await knex('milestones')
+      .where('personid', personid)
+      .orderBy('milestoneno', 'desc')
+      .first();
+
+    // Calculate next milestone number (highest + 1, or 1 if no milestones exist)
+    const nextMilestoneNo = lastMilestone ? lastMilestone.milestoneno + 1 : 1;
+
+    // Get the max milestoneid and add 1 (to avoid primary key conflicts)
+    // This handles cases where the sequence might be out of sync
+    const maxMilestone = await knex('milestones')
+      .max('milestoneid as maxid')
+      .first();
+    
+    const nextMilestoneId = maxMilestone && maxMilestone.maxid ? parseInt(maxMilestone.maxid) + 1 : 1;
+
+    // Insert milestone - milestoneid will be explicitly set to avoid sequence issues
+    await knex('milestones').insert({
+      milestoneid: nextMilestoneId,
+      personid: parseInt(personid),
+      milestoneno: nextMilestoneNo,
+      milestonetitle: milestonetitle,
+      milestonedate: milestonedate
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Milestone assigned successfully',
+      redirect: `/manage/milestones/${personid}?message=Milestone assigned successfully!&messageType=success`
+    });
+  } catch (error) {
+    console.error('Error assigning milestone:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error assigning milestone: ' + error.message 
+    });
+  }
+});
+
+app.get('/admin/users', requireManager, async (req, res) => {
+  try {
+    // Pagination settings
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20; // Users per page
+    const offset = (page - 1) * limit;
+    
+    // Search query
+    const search = req.query.search || '';
+    
+    // Build query
+    let query = knex('login')
+      .leftJoin('people', 'login.email', 'people.email')
+      .select(
+        'login.email',
+        'login.level as role',
+        'people.firstname',
+        'people.lastname',
+        'people.personid'
+      );
+    
+    // Apply search filter if provided
+    if (search) {
+      query = query.where(function() {
+        this.where('login.email', 'ilike', `%${search}%`)
+          .orWhere('people.firstname', 'ilike', `%${search}%`)
+          .orWhere('people.lastname', 'ilike', `%${search}%`);
+      });
+    }
+    
+    // Get total count for pagination
+    const countQuery = query.clone().clearSelect().count('* as total').first();
+    const totalResult = await countQuery;
+    const totalUsers = parseInt(totalResult.total);
+    const totalPages = Math.ceil(totalUsers / limit);
+    
+    // Apply pagination and ordering
+    const allUsers = await query
+      .orderBy('login.email', 'asc')
+      .limit(limit)
+      .offset(offset);
+    
+    // Format users for display
+    const users = allUsers.map(u => ({
+      email: u.email,
+      firstName: u.firstname || 'N/A',
+      lastName: u.lastname || '',
+      role: u.role || 'user',
+      personId: u.personid || null
+    }));
+    
+    res.render('admin/admin-users', { 
+      currentPage: 'admin', 
+      pageTitle: 'Manage Users', 
+      users,
+      search,
+      currentPageNum: page,
+      totalPages,
+      totalUsers,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      message: req.query.message || null,
+      messageType: req.query.messageType || null
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.render('admin/admin-users', { 
+      currentPage: 'admin', 
+      pageTitle: 'Manage Users', 
+      users: [],
+      search: '',
+      currentPageNum: 1,
+      totalPages: 0,
+      totalUsers: 0,
+      hasNextPage: false,
+      hasPrevPage: false
+    });
+  }
+});
+
+// GET /admin/users/new - Show form to add new user
+app.get('/admin/users/new', requireManager, (req, res) => {
+  res.render('admin/user-form', {
+    currentPage: 'admin',
+    pageTitle: 'Add New User',
+    user: null,
+    error: null
   });
 });
+
+// POST /admin/users - Create new user
+app.post('/admin/users', requireManager, async (req, res) => {
+  try {
+    const { email, password, level, firstname, lastname } = req.body;
+
+    // Validate required fields
+    if (!email || !password || !level) {
+      return res.render('admin/user-form', {
+        currentPage: 'admin',
+        pageTitle: 'Add New User',
+        user: { email, level, firstname, lastname },
+        error: 'Email, password, and role are required.'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await knex('login')
+      .where('email', email)
+      .first();
+
+    if (existingUser) {
+      return res.render('admin/user-form', {
+        currentPage: 'admin',
+        pageTitle: 'Add New User',
+        user: { email, level, firstname, lastname },
+        error: 'A user with this email already exists.'
+      });
+    }
+
+    // Insert into login table
+    await knex('login').insert({
+      email: email,
+      password: password, // TODO: Hash with bcrypt in production
+      level: level
+    });
+
+    // If name provided, check if person exists and update/create
+    if (firstname || lastname) {
+      const existingPerson = await knex('people')
+        .where('email', email)
+        .first();
+
+      if (existingPerson) {
+        // Update existing person
+        await knex('people')
+          .where('email', email)
+          .update({
+            firstname: firstname || existingPerson.firstname,
+            lastname: lastname || existingPerson.lastname
+          });
+      } else {
+        // Create new person (we'll need personid - let's get max and add 1)
+        const maxPerson = await knex('people')
+          .max('personid as maxid')
+          .first();
+        const nextPersonId = maxPerson && maxPerson.maxid ? parseInt(maxPerson.maxid) + 1 : 1;
+
+        await knex('people').insert({
+          personid: nextPersonId,
+          email: email,
+          firstname: firstname || '',
+          lastname: lastname || ''
+        });
+      }
+    }
+
+    res.redirect('/admin/users?message=User created successfully!&messageType=success');
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.render('admin/user-form', {
+      currentPage: 'admin',
+      pageTitle: 'Add New User',
+      user: req.body,
+      error: 'An error occurred while creating the user: ' + error.message
+    });
+  }
+});
+
+// GET /admin/users/:email/edit - Show form to edit user
+app.get('/admin/users/:email/edit', requireManager, async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email);
+    
+    const loginUser = await knex('login')
+      .where('email', email)
+      .first();
+
+    if (!loginUser) {
+      return res.status(404).render('errors/404', {
+        currentPage: 'admin',
+        pageTitle: 'User Not Found'
+      });
+    }
+
+    const person = await knex('people')
+      .where('email', email)
+      .first();
+
+    res.render('admin/user-form', {
+      currentPage: 'admin',
+      pageTitle: 'Edit User',
+      user: {
+        email: loginUser.email,
+        level: loginUser.level,
+        firstname: person ? person.firstname : '',
+        lastname: person ? person.lastname : '',
+        personid: person ? person.personid : null
+      },
+      error: null
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).render('errors/500', {
+      currentPage: 'admin',
+      pageTitle: 'Error',
+      message: 'Failed to load user.'
+    });
+  }
+});
+
+// POST /admin/users/:email - Update user
+app.post('/admin/users/:email', requireManager, async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email);
+    const { password, level, firstname, lastname } = req.body;
+
+    // Check if user exists
+    const existingUser = await knex('login')
+      .where('email', email)
+      .first();
+
+    if (!existingUser) {
+      return res.status(404).render('errors/404', {
+        currentPage: 'admin',
+        pageTitle: 'User Not Found'
+      });
+    }
+
+    // Update login table
+    const updateData = { level: level };
+    if (password && password.trim() !== '') {
+      updateData.password = password; // TODO: Hash with bcrypt in production
+    }
+
+    await knex('login')
+      .where('email', email)
+      .update(updateData);
+
+    // Update or create person record
+    const existingPerson = await knex('people')
+      .where('email', email)
+      .first();
+
+    if (existingPerson) {
+      // Update existing person
+      await knex('people')
+        .where('email', email)
+        .update({
+          firstname: firstname || existingPerson.firstname,
+          lastname: lastname || existingPerson.lastname
+        });
+    } else if (firstname || lastname) {
+      // Create new person if name provided
+      const maxPerson = await knex('people')
+        .max('personid as maxid')
+        .first();
+      const nextPersonId = maxPerson && maxPerson.maxid ? parseInt(maxPerson.maxid) + 1 : 1;
+
+      await knex('people').insert({
+        personid: nextPersonId,
+        email: email,
+        firstname: firstname || '',
+        lastname: lastname || ''
+      });
+    }
+
+    res.redirect('/admin/users?message=User updated successfully!&messageType=success');
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.render('admin/user-form', {
+      currentPage: 'admin',
+      pageTitle: 'Edit User',
+      user: { ...req.body, email: decodeURIComponent(req.params.email) },
+      error: 'An error occurred while updating the user: ' + error.message
+    });
+  }
+});
+
+// DELETE /admin/users/:email - Delete user
+app.delete('/admin/users/:email', requireManager, async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email);
+
+    // Prevent deleting yourself
+    if (email === req.session.user.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot delete your own account.'
+      });
+    }
+
+    // Delete from people table first (to avoid foreign key constraint violation)
+    await knex('people')
+      .where('email', email)
+      .del();
+
+    // Then delete from login table
+    await knex('login')
+      .where('email', email)
+      .del();
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully.'
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting user: ' + error.message
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
 
 // ============================================
 // ERROR HANDLING
@@ -511,6 +1115,16 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).render('errors/404', { currentPage: '404', pageTitle: 'Page Not Found' });
 });
+
+
+
+
+
+
+
+
+
+
 
 // ============================================
 // START SERVER

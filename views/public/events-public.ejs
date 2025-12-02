@@ -18,36 +18,50 @@
     <!-- Events List -->
     <section class="section">
       <div class="container">
-        <div class="events-list">
-          <% events.forEach(event => { %>
-            <article class="event-card">
-              <div class="event-date">
-                <span class="month"><%= new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short' }).toUpperCase() %></span>
-                <span class="day"><%= new Date(event.eventDate).getDate() %></span>
-              </div>
-              <div class="event-info">
-                <span class="event-type <%= event.eventType %>"><%= event.eventType %></span>
-                <h3><%= event.title %></h3>
-                <p><%= event.description %></p>
-                <div class="event-details-row">
-                  <span>📍 <%= event.location %></span>
-                  <span>🕐 <%= event.eventTime %></span>
-                  <span>👥 <%= event.registered %>/<%= event.capacity %> registered</span>
+        <% if (events && events.length > 0) { %>
+          <div class="events-list">
+            <% events.forEach(event => { 
+              const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+            %>
+              <article class="event-card">
+                <div class="event-date">
+                  <% if (eventDate) { %>
+                    <span class="month"><%= eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() %></span>
+                    <span class="day"><%= eventDate.getDate() %></span>
+                    <span class="year"><%= eventDate.getFullYear() %></span>
+                  <% } else { %>
+                    <span class="month">TBD</span>
+                  <% } %>
                 </div>
-              </div>
-              <div class="event-actions">
-                <% if (user) { %>
-                  <button class="btn btn-primary btn-sm">RSVP</button>
-                <% } else { %>
-                  <a href="/login" class="btn btn-outline btn-sm">Login to RSVP</a>
-                <% } %>
-                <% if (user && user.role === 'manager') { %>
-                  <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
-                <% } %>
-              </div>
-            </article>
-          <% }) %>
-        </div>
+                <div class="event-info">
+                  <span class="event-type <%= event.eventType ? event.eventType.toLowerCase().replace(/\s+/g, '-') : '' %>"><%= event.eventType || 'Event' %></span>
+                  <h3><%= event.title %></h3>
+                  <p><%= event.description %></p>
+                  <div class="event-details-row">
+                    <% if (event.location) { %><span>📍 <%= event.location %></span><% } %>
+                    <% if (eventDate) { %><span>🕐 <%= eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %></span><% } %>
+                    <% if (event.capacity) { %><span>👥 <%= event.capacity %> spots</span><% } %>
+                    <% if (event.recurrence) { %><span>🔄 <%= event.recurrence %></span><% } %>
+                  </div>
+                </div>
+                <div class="event-actions">
+                  <% if (user) { %>
+                    <button class="btn btn-primary btn-sm">RSVP</button>
+                  <% } else { %>
+                    <a href="/login" class="btn btn-outline btn-sm">Login to RSVP</a>
+                  <% } %>
+                  <% if (user && user.role === 'manager') { %>
+                    <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+                  <% } %>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No upcoming events at this time. Check back soon!</p>
+          </div>
+        <% } %>
       </div>
     </section>
 
