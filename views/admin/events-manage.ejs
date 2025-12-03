@@ -16,53 +16,172 @@
     <!-- Events Table -->
     <section class="section">
       <div class="container">
-        <div class="data-table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Event</th>
-                <th>Type</th>
-                <th>Location</th>
-                <th>Registration</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% events.forEach(event => { %>
-                <tr>
-                  <td>
-                    <div class="date-cell">
-                      <span class="date-month"><%= new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short' }) %></span>
-                      <span class="date-day"><%= new Date(event.eventDate).getDate() %></span>
-                    </div>
-                  </td>
-                  <td>
-                    <strong><%= event.title %></strong>
-                    <br><small class="text-muted"><%= event.eventTime %></small>
-                  </td>
-                  <td><span class="badge badge-<%= event.eventType %>"><%= event.eventType %></span></td>
-                  <td><%= event.location %></td>
-                  <td>
-                    <div class="progress-mini">
-                      <div class="progress-bar" style="width: <%= (event.registered / event.capacity) * 100 %>%"></div>
-                    </div>
-                    <small><%= event.registered %>/<%= event.capacity %></small>
-                  </td>
-                  <td>
-                    <div class="action-buttons">
-                      <a href="/manage/events/<%= event.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
-                      <a href="/manage/events/<%= event.id %>/transportation" class="btn btn-sm btn-secondary">Rides</a>
-                      <button class="btn btn-sm btn-danger">Delete</button>
-                    </div>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
+        <% if (typeof message !== 'undefined' && message) { %>
+          <div class="alert alert-<%= typeof messageType !== 'undefined' && messageType === 'success' ? 'success' : 'error' %>" style="margin-bottom: var(--space-xl);">
+            <%= message %>
+          </div>
+        <% } %>
+
+        <!-- Search and Stats -->
+        <div class="table-controls">
+          <form method="GET" action="/manage/events" class="search-form">
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search by name, description, or location..." 
+              value="<%= search || '' %>"
+              class="search-input"
+            >
+            <button type="submit" class="btn btn-primary">Search</button>
+            <% if (search) { %>
+              <a href="/manage/events" class="btn btn-outline">Clear</a>
+            <% } %>
+          </form>
+          <div class="table-stats">
+            Showing <%= events.length > 0 ? ((currentPageNum - 1) * 20 + 1) : 0 %>-<%= Math.min(currentPageNum * 20, totalEvents) %> of <%= totalEvents %> events
+          </div>
         </div>
+
+        <% if (events && events.length > 0) { %>
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Event</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Capacity</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% events.forEach(event => { 
+                  const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+                %>
+                  <tr>
+                    <td>
+                      <% if (eventDate) { %>
+                        <div class="date-cell">
+                          <span class="date-month"><%= eventDate.toLocaleDateString('en-US', { month: 'short' }) %></span>
+                          <span class="date-day"><%= eventDate.getDate() %></span>
+                        </div>
+                      <% } else { %>
+                        <span class="text-muted">TBD</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <strong><%= event.title %></strong>
+                      <% if (event.eventTime) { %>
+                        <br><small class="text-muted"><%= event.eventTime %></small>
+                      <% } %>
+                    </td>
+                    <td><span class="badge badge-<%= event.eventType ? event.eventType.toLowerCase().replace(/\s+/g, '-') : '' %>"><%= event.eventType || 'Event' %></span></td>
+                    <td><%= event.location || 'N/A' %></td>
+                    <td>
+                      <% if (event.capacity) { %>
+                        <small><%= event.capacity %> spots</small>
+                      <% } else { %>
+                        <span class="text-muted">N/A</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <a href="/manage/events/<%= event.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                        <button class="btn btn-sm btn-danger delete-event-btn" data-id="<%= event.id %>" data-title="<%= event.title %>">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <% if (totalPages > 1) { %>
+            <div class="pagination">
+              <% if (hasPrevPage) { %>
+                <a href="/manage/events?page=<%= currentPageNum - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-btn">← Previous</a>
+              <% } else { %>
+                <span class="pagination-btn disabled">← Previous</span>
+              <% } %>
+              
+              <div class="pagination-pages">
+                <% 
+                  let startPage = Math.max(1, currentPageNum - 2);
+                  let endPage = Math.min(totalPages, currentPageNum + 2);
+                  
+                  if (startPage > 1) { %>
+                    <a href="/manage/events?page=1<%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-number">1</a>
+                    <% if (startPage > 2) { %>
+                      <span class="pagination-ellipsis">...</span>
+                    <% } %>
+                  <% }
+                  
+                  for (let i = startPage; i <= endPage; i++) { %>
+                    <% if (i === currentPageNum) { %>
+                      <span class="pagination-number active"><%= i %></span>
+                    <% } else { %>
+                      <a href="/manage/events?page=<%= i %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-number"><%= i %></a>
+                    <% } %>
+                  <% }
+                  
+                  if (endPage < totalPages) { %>
+                    <% if (endPage < totalPages - 1) { %>
+                      <span class="pagination-ellipsis">...</span>
+                    <% } %>
+                    <a href="/manage/events?page=<%= totalPages %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-number"><%= totalPages %></a>
+                  <% } %>
+              </div>
+              
+              <% if (hasNextPage) { %>
+                <a href="/manage/events?page=<%= currentPageNum + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-btn">Next →</a>
+              <% } else { %>
+                <span class="pagination-btn disabled">Next →</span>
+              <% } %>
+            </div>
+          <% } %>
+        <% } else { %>
+          <div class="empty-state">
+            <p><%= search ? 'No events found matching your search.' : 'No events found. Create your first event!' %></p>
+          </div>
+        <% } %>
       </div>
     </section>
+
+    <script>
+      // Handle delete event
+      document.querySelectorAll('.delete-event-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const eventId = this.getAttribute('data-id');
+          const eventTitle = this.getAttribute('data-title');
+          
+          if (!confirm(`Are you sure you want to delete the event "${eventTitle}"? This action cannot be undone.`)) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`/manage/events/${eventId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert('Event deleted successfully!');
+              window.location.reload();
+            } else {
+              alert('Error: ' + result.message);
+            }
+          } catch (error) {
+            alert('Error deleting event: ' + error.message);
+          }
+        });
+      });
+    </script>
 
 <%- include('../partials/footer') %>
 

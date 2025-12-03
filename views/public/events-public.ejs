@@ -15,9 +15,13 @@
       </div>
     </section>
 
-    <!-- Events List -->
+    <!-- Upcoming Events -->
     <section class="section">
       <div class="container">
+        <div class="section-header">
+          <h2>Upcoming Events</h2>
+          <p class="text-muted">Join us at these upcoming events and workshops.</p>
+        </div>
         <% if (events && events.length > 0) { %>
           <div class="events-list">
             <% events.forEach(event => { 
@@ -35,17 +39,40 @@
                 </div>
                 <div class="event-info">
                   <span class="event-type <%= event.eventType ? event.eventType.toLowerCase().replace(/\s+/g, '-') : '' %>"><%= event.eventType || 'Event' %></span>
-                  <h3><a href="/events/<%= event.id %>"><%= event.title %></a></h3>
+                  <h3><%= event.title %></h3>
                   <p><%= event.description %></p>
                   <div class="event-details-row">
                     <% if (event.location) { %><span>📍 <%= event.location %></span><% } %>
                     <% if (eventDate) { %><span>🕐 <%= eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %></span><% } %>
-                    <% if (event.capacity) { %><span>👥 <%= event.capacity %> spots</span><% } %>
-                    <% if (event.recurrence) { %><span>🔄 <%= event.recurrence %></span><% } %>
+                    <% if (event.capacity) { %>
+                      <span>👥 <%= event.registered || 0 %>/<%= event.capacity %> registered
+                        <% if (event.isFull) { %>
+                          <span class="badge badge-danger" style="margin-left: 8px;">Full</span>
+                        <% } %>
+                      </span>
+                    <% } %>
                   </div>
                 </div>
                 <div class="event-actions">
-                  <a href="/events/<%= event.id %>" class="btn btn-primary btn-sm">View Details & RSVP</a>
+                  <% if (user) { %>
+                    <% if (event.userHasRSVPd) { %>
+                      <button class="btn btn-outline btn-sm cancel-rsvp-btn" data-detail-id="<%= event.detailId %>">Cancel RSVP</button>
+                      <span class="badge badge-success" style="margin-left: 8px;">You're Going!</span>
+                    <% } else if (event.isFull) { %>
+                      <button class="btn btn-outline btn-sm" disabled>Event Full</button>
+                    <% } else { %>
+                      <% 
+                        const deadlinePassed = event.registrationDeadline && new Date(event.registrationDeadline) < new Date();
+                      %>
+                      <% if (deadlinePassed) { %>
+                        <button class="btn btn-outline btn-sm" disabled>Registration Closed</button>
+                      <% } else { %>
+                        <button class="btn btn-primary btn-sm rsvp-btn" data-detail-id="<%= event.detailId %>">RSVP</button>
+                      <% } %>
+                    <% } %>
+                  <% } else { %>
+                    <a href="/login?redirect=/events" class="btn btn-outline btn-sm">Login to RSVP</a>
+                  <% } %>
                   <% if (user && user.role === 'manager') { %>
                     <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
                   <% } %>
@@ -60,6 +87,131 @@
         <% } %>
       </div>
     </section>
+
+    <!-- Past Events -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-header">
+          <h2>Past Events</h2>
+          <p class="text-muted">A look back at our recent events and activities.</p>
+        </div>
+        <% if (pastEvents && pastEvents.length > 0) { %>
+          <div class="events-list">
+            <% pastEvents.forEach(event => { 
+              const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+            %>
+              <article class="event-card past-event">
+                <div class="event-date">
+                  <% if (eventDate) { %>
+                    <span class="month"><%= eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() %></span>
+                    <span class="day"><%= eventDate.getDate() %></span>
+                    <span class="year"><%= eventDate.getFullYear() %></span>
+                  <% } else { %>
+                    <span class="month">TBD</span>
+                  <% } %>
+                </div>
+                <div class="event-info">
+                  <span class="event-type <%= event.eventType ? event.eventType.toLowerCase().replace(/\s+/g, '-') : '' %>"><%= event.eventType || 'Event' %></span>
+                  <h3><%= event.title %></h3>
+                  <p><%= event.description %></p>
+                  <div class="event-details-row">
+                    <% if (event.location) { %><span>📍 <%= event.location %></span><% } %>
+                    <% if (eventDate) { %><span>🕐 <%= eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %></span><% } %>
+                    <% if (event.capacity) { %><span>👥 <%= event.capacity %> spots</span><% } %>
+                    <% if (event.recurrence) { %><span>🔄 <%= event.recurrence %></span><% } %>
+                  </div>
+                </div>
+                <div class="event-actions">
+                  <span class="badge badge-secondary">Past Event</span>
+                  <% if (user && user.role === 'manager') { %>
+                    <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+                  <% } %>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No past events to display.</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <script>
+      // Handle RSVP button clicks
+      document.querySelectorAll('.rsvp-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const detailId = this.getAttribute('data-detail-id');
+          const originalText = this.textContent;
+          this.disabled = true;
+          this.textContent = 'Processing...';
+
+          try {
+            const response = await fetch(`/events/${detailId}/rsvp`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert(result.message);
+              window.location.reload(); // Reload to update counts and status
+            } else {
+              alert('Error: ' + result.message);
+              this.disabled = false;
+              this.textContent = originalText;
+            }
+          } catch (error) {
+            alert('Error: ' + error.message);
+            this.disabled = false;
+            this.textContent = originalText;
+          }
+        });
+      });
+
+      // Handle Cancel RSVP button clicks
+      document.querySelectorAll('.cancel-rsvp-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const detailId = this.getAttribute('data-detail-id');
+          
+          if (!confirm('Are you sure you want to cancel your RSVP?')) {
+            return;
+          }
+
+          const originalText = this.textContent;
+          this.disabled = true;
+          this.textContent = 'Cancelling...';
+
+          try {
+            const response = await fetch(`/events/${detailId}/rsvp`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert(result.message);
+              window.location.reload(); // Reload to update counts and status
+            } else {
+              alert('Error: ' + result.message);
+              this.disabled = false;
+              this.textContent = originalText;
+            }
+          } catch (error) {
+            alert('Error: ' + error.message);
+            this.disabled = false;
+            this.textContent = originalText;
+          }
+        });
+      });
+    </script>
 
 <%- include('../partials/footer') %>
 
