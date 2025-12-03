@@ -3,6 +3,7 @@
     <!-- Page Hero -->
     <section class="page-hero compact">
       <div class="container">
+        <a href="/dashboard" class="btn btn-sm btn-outline" style="margin-bottom: var(--space-md);">← Back to Dashboard</a>
         <p class="eyebrow"><%= user.role === 'manager' ? 'Admin' : 'Community' %></p>
         <h1>Program <em>Participants</em></h1>
         <p class="page-lead">
@@ -18,29 +19,28 @@
     <!-- Participants Section -->
     <section class="section">
       <div class="container">
-        <!-- Stats and Search -->
-        <div class="participants-header">
-          <div class="participants-stats">
-            <span class="stat-number"><%= totalParticipants %></span>
-            <span class="stat-label">Total Participants</span>
-          </div>
-          
-          <div style="display: flex; gap: var(--space-md); align-items: center; flex-wrap: wrap;">
-            <form method="GET" action="/participants" class="participants-search-form">
-              <input 
-                type="text" 
-                name="search" 
-                placeholder="Search by name, email, or location..." 
-                value="<%= searchTerm %>"
-                class="search-input"
-              >
-              <button type="submit" class="btn btn-primary">Search</button>
-              <% if (searchTerm) { %>
-                <a href="/participants" class="btn btn-outline">Clear</a>
-              <% } %>
-            </form>
+        <!-- Search and Actions -->
+        <div class="table-controls">
+          <form method="GET" action="/participants" class="search-form">
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search by name, email, or location..." 
+              value="<%= searchTerm %>"
+              class="search-input"
+            >
+            <button type="submit" class="btn btn-primary">Search</button>
+            <% if (searchTerm) { %>
+              <a href="/participants" class="btn btn-outline">Clear</a>
+            <% } %>
+          </form>
+          <div class="table-controls-right">
+            <div class="participants-stats">
+              <span class="stat-number"><%= totalParticipants %></span>
+              <span class="stat-label">Total Participants</span>
+            </div>
             <% if (user.role === 'manager') { %>
-              <a href="/manage/participants/new" class="btn btn-primary">+ Add Participant</a>
+              <a href="/admin/users/new" class="btn btn-primary">+ Add Participant</a>
             <% } %>
           </div>
         </div>

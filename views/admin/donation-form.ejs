@@ -22,16 +22,25 @@
           <form method="POST" action="<%= donation ? '/manage/donations/' + donation.donationid : '/manage/donations' %>">
             
             <div class="form-group">
-              <label for="personid">Donor (Person ID)</label>
-              <input 
-                type="number" 
-                id="personid" 
-                name="personid" 
-                class="form-control"
-                value="<%= donation ? donation.personid : '' %>"
-                placeholder="Enter person ID (optional for anonymous)"
-              >
-              <small class="form-help">Leave empty for anonymous donations. Enter the person ID from the participants list.</small>
+              <label for="donorSearch">Donor</label>
+              <div class="user-search-container">
+                <input 
+                  type="text" 
+                  id="donorSearch" 
+                  class="form-control"
+                  placeholder="Search by name or email..."
+                  autocomplete="off"
+                  value="<%= donation && donation.firstname ? donation.firstname + ' ' + donation.lastname + ' (' + donation.email + ')' : '' %>"
+                >
+                <input 
+                  type="hidden" 
+                  id="personid" 
+                  name="personid" 
+                  value="<%= donation ? donation.personid : '' %>"
+                >
+                <div id="userSearchResults" class="user-search-results"></div>
+              </div>
+              <small class="form-help">Search for a donor by name or email. Leave empty for anonymous donations.</small>
             </div>
 
             <div class="form-row">
@@ -143,6 +152,58 @@
         padding-top: var(--space-xl);
         border-top: 1px solid var(--border-light);
       }
+      .user-search-container {
+        position: relative;
+      }
+      .user-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--white);
+        border: 1px solid var(--border-light);
+        border-top: none;
+        border-radius: 0 0 var(--radius-md) var(--radius-md);
+        box-shadow: var(--shadow-md);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+      }
+      .user-search-results.show {
+        display: block;
+      }
+      .user-result-item {
+        padding: var(--space-md);
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-light);
+        transition: background-color 0.2s ease;
+      }
+      .user-result-item:hover {
+        background-color: var(--bg-light);
+      }
+      .user-result-item:last-child {
+        border-bottom: none;
+      }
+      .user-result-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: var(--space-xs);
+      }
+      .user-result-email {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+      .user-result-location {
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+        margin-top: var(--space-xs);
+      }
+      .user-result-id {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        margin-top: var(--space-xs);
+      }
       @media (max-width: 600px) {
         .form-row {
           grid-template-columns: 1fr;
@@ -152,6 +213,110 @@
         }
       }
     </style>
+
+    <script>
+      (function() {
+        const donorSearch = document.getElementById('donorSearch');
+        const personidInput = document.getElementById('personid');
+        const resultsContainer = document.getElementById('userSearchResults');
+        let searchTimeout;
+
+        // Clear selection button
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'btn btn-sm btn-outline';
+        clearBtn.textContent = 'Clear';
+        clearBtn.style.marginTop = 'var(--space-xs)';
+        clearBtn.style.display = 'none';
+        clearBtn.addEventListener('click', () => {
+          donorSearch.value = '';
+          personidInput.value = '';
+          resultsContainer.classList.remove('show');
+          clearBtn.style.display = 'none';
+        });
+        donorSearch.parentElement.appendChild(clearBtn);
+
+        // Search functionality
+        donorSearch.addEventListener('input', (e) => {
+          const query = e.target.value.trim();
+          
+          // Clear personid if search is cleared
+          if (!query) {
+            personidInput.value = '';
+            resultsContainer.classList.remove('show');
+            clearBtn.style.display = 'none';
+            return;
+          }
+
+          // Clear previous timeout
+          clearTimeout(searchTimeout);
+
+          // Only search if query is at least 2 characters
+          if (query.length < 2) {
+            resultsContainer.classList.remove('show');
+            return;
+          }
+
+          // Debounce search
+          searchTimeout = setTimeout(async () => {
+            try {
+              const response = await fetch(`/api/search-users?q=${encodeURIComponent(query)}`);
+              const users = await response.json();
+
+              // Clear previous results
+              resultsContainer.innerHTML = '';
+
+              if (users.length === 0) {
+                resultsContainer.innerHTML = '<div class="user-result-item" style="cursor: default; color: var(--text-secondary);">No users found</div>';
+              } else {
+                users.forEach(user => {
+                  const item = document.createElement('div');
+                  item.className = 'user-result-item';
+                  item.innerHTML = `
+                    <div class="user-result-name">${escapeHtml(user.firstname || '')} ${escapeHtml(user.lastname || '')}</div>
+                    <div class="user-result-email">${escapeHtml(user.email || '')}</div>
+                    ${user.city || user.state ? `<div class="user-result-location">${escapeHtml(user.city || '')}${user.city && user.state ? ', ' : ''}${escapeHtml(user.state || '')}</div>` : ''}
+                    <div class="user-result-id">ID: ${user.personid}</div>
+                  `;
+                  item.addEventListener('click', () => {
+                    donorSearch.value = `${user.firstname || ''} ${user.lastname || ''} (${user.email || ''})`.trim();
+                    personidInput.value = user.personid;
+                    resultsContainer.classList.remove('show');
+                    clearBtn.style.display = 'block';
+                  });
+                  resultsContainer.appendChild(item);
+                });
+              }
+
+              resultsContainer.classList.add('show');
+            } catch (error) {
+              console.error('Error searching users:', error);
+              resultsContainer.innerHTML = '<div class="user-result-item" style="cursor: default; color: var(--danger);">Error searching users</div>';
+              resultsContainer.classList.add('show');
+            }
+          }, 300);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!donorSearch.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.classList.remove('show');
+          }
+        });
+
+        // Show clear button if personid is already set (edit mode)
+        if (personidInput.value) {
+          clearBtn.style.display = 'block';
+        }
+
+        // Escape HTML helper
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+      })();
+    </script>
 
 <%- include('../partials/footer') %>
 

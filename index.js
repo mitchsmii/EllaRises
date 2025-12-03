@@ -425,9 +425,10 @@ app.get('/stories', (req, res) => {
 app.get('/events', async (req, res) => {
   try {
     const now = new Date();
+    const searchTerm = req.query.search ? `%${req.query.search.toLowerCase()}%` : '';
     
-    // Get upcoming events (eventdatetimestart >= now)
-    const upcomingEventsRaw = await knex('events')
+    // Build query for upcoming events
+    let upcomingQuery = knex('events')
       .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
       .whereNotNull('event_details.eventdatetimestart')
       .where('event_details.eventdatetimestart', '>=', now)
@@ -441,12 +442,10 @@ app.get('/events', async (req, res) => {
         'event_details.eventregistrationdeadline as registrationDeadline',
         'event_details.eventcapacity as capacity',
         'event_details.eventlocation as location'
-      )
-      .orderBy('event_details.eventdatetimestart', 'asc')
-      .limit(20);
-    
-    // Get past events (eventdatetimestart < now)
-    const pastEventsRaw = await knex('events')
+      );
+
+    // Build query for past events
+    let pastQuery = knex('events')
       .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
       .whereNotNull('event_details.eventdatetimestart')
       .where('event_details.eventdatetimestart', '<', now)
@@ -460,7 +459,31 @@ app.get('/events', async (req, res) => {
         'event_details.eventregistrationdeadline as registrationDeadline',
         'event_details.eventcapacity as capacity',
         'event_details.eventlocation as location'
-      )
+      );
+
+    // Apply search filter if provided
+    if (searchTerm) {
+      upcomingQuery = upcomingQuery.where(function() {
+        this.whereRaw('LOWER(events.eventname) ILIKE ?', [searchTerm])
+            .orWhereRaw('LOWER(events.eventdescription) ILIKE ?', [searchTerm])
+            .orWhereRaw('LOWER(events.eventtype) ILIKE ?', [searchTerm])
+            .orWhereRaw('LOWER(event_details.eventlocation) ILIKE ?', [searchTerm]);
+      });
+      pastQuery = pastQuery.where(function() {
+        this.whereRaw('LOWER(events.eventname) ILIKE ?', [searchTerm])
+            .orWhereRaw('LOWER(events.eventdescription) ILIKE ?', [searchTerm])
+            .orWhereRaw('LOWER(events.eventtype) ILIKE ?', [searchTerm])
+            .orWhereRaw('LOWER(event_details.eventlocation) ILIKE ?', [searchTerm]);
+      });
+    }
+    
+    // Get upcoming events
+    const upcomingEventsRaw = await upcomingQuery
+      .orderBy('event_details.eventdatetimestart', 'asc')
+      .limit(20);
+    
+    // Get past events
+    const pastEventsRaw = await pastQuery
       .orderBy('event_details.eventdatetimestart', 'desc')
       .limit(20);
     
@@ -538,7 +561,9 @@ app.get('/events', async (req, res) => {
       pageTitle: 'Events', 
       pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', 
       events: upcomingEvents,
-      pastEvents: pastEvents
+      pastEvents: pastEvents,
+      searchTerm: req.query.search || '',
+      user: req.session.user
     });
   } catch (error) {
     console.error('Error fetching events:', error);
@@ -715,12 +740,195 @@ app.get('/get-involved', (req, res) => {
   res.render('public/get-involved', { currentPage: 'get-involved', pageTitle: 'Get Involved', pageDescription: 'Discover ways to volunteer, mentor, donate, and partner with Ella Rises.' });
 });
 
-app.get('/donate', (req, res) => {
-  res.render('public/donate', { currentPage: 'donate', pageTitle: 'Donate', pageDescription: 'Support our mission with a tax-deductible donation.' });
+app.get('/donate', async (req, res) => {
+  let userInfo = null;
+  
+  // If user is logged in, pre-fill their information
+  if (req.session.user && req.session.user.email) {
+    try {
+      const person = await knex('people')
+        .where('email', req.session.user.email)
+        .first();
+      
+      if (person) {
+        userInfo = {
+          firstname: person.firstname || '',
+          lastname: person.lastname || '',
+          email: person.email || req.session.user.email,
+          phone: person.phone || '',
+          city: person.city || '',
+          state: person.state || ''
+        };
+      } else {
+        // Fallback to session data
+        userInfo = {
+          firstname: req.session.user.firstName || '',
+          lastname: req.session.user.lastName || '',
+          email: req.session.user.email || '',
+          phone: req.session.user.phone || '',
+          city: '',
+          state: ''
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching user info for donation form:', error);
+    }
+  }
+  
+  res.render('public/donate', { 
+    currentPage: 'donate', 
+    pageTitle: 'Donate', 
+    pageDescription: 'Support our mission with a tax-deductible donation.',
+    error: req.query.error || null,
+    success: req.query.success || null,
+    userInfo: userInfo,
+    isLoggedIn: !!req.session.user
+  });
+});
+
+// POST /donate - Handle donation submission
+app.post('/donate', async (req, res) => {
+  try {
+    const { firstname, lastname, email, phone, city, state, donationAmount, frequency, designation } = req.body;
+
+    // Validate required fields
+    if (!firstname || !lastname || !email || !donationAmount) {
+      return res.redirect('/donate?error=' + encodeURIComponent('Please fill in all required fields (name, email, and donation amount).'));
+    }
+
+    const amount = parseFloat(donationAmount);
+    if (isNaN(amount) || amount <= 0) {
+      return res.redirect('/donate?error=' + encodeURIComponent('Please enter a valid donation amount.'));
+    }
+
+    // Clean phone number - strip all non-numeric characters
+    const cleanedPhone = phone ? phone.replace(/\D/g, '') : null;
+
+    // Check if user already exists in login table
+    const existingLogin = await knex('login')
+      .where('email', email)
+      .first();
+
+    // If email exists and user is not logged in (or logged in with different email), require login
+    if (existingLogin && (!req.session.user || req.session.user.email !== email)) {
+      return res.render('public/donate', {
+        currentPage: 'donate',
+        pageTitle: 'Donate',
+        pageDescription: 'Support our mission with a tax-deductible donation.',
+        error: `An account with the email "${email}" already exists. Please <a href="/login?redirect=/donate" style="color: var(--salmon); text-decoration: underline;">log in</a> to make a donation.`,
+        success: null,
+        userInfo: null,
+        isLoggedIn: false
+      });
+    }
+
+    const wasNewUser = !existingLogin;
+
+    // Start transaction to ensure all operations succeed or fail together
+    await knex.transaction(async (trx) => {
+      // If user doesn't exist, create login entry
+      if (!existingLogin) {
+        // Generate a temporary password (user can reset later)
+        const tempPassword = 'temp123'; // TODO: Consider generating a random password and emailing it
+        
+        await trx('login').insert({
+          email: email,
+          password: tempPassword,
+          level: 'user' // Default to regular user
+        });
+      }
+
+      // Check if person exists in people table
+      let existingPerson = await trx('people')
+        .where('email', email)
+        .first();
+
+      // Get max personid if we need to create a new person
+      let personId;
+      if (existingPerson) {
+        personId = existingPerson.personid;
+        // Update existing person with new information
+        await trx('people')
+          .where('email', email)
+          .update({
+            firstname: firstname || existingPerson.firstname,
+            lastname: lastname || existingPerson.lastname,
+            phone: cleanedPhone || existingPerson.phone,
+            city: city || existingPerson.city,
+            state: state || existingPerson.state
+          });
+      } else {
+        // Create new person
+        const maxPerson = await trx('people')
+          .max('personid as maxid')
+          .first();
+        personId = maxPerson && maxPerson.maxid ? parseInt(maxPerson.maxid) + 1 : 1;
+
+        await trx('people').insert({
+          personid: personId,
+          email: email,
+          firstname: firstname,
+          lastname: lastname,
+          phone: cleanedPhone || null,
+          city: city || null,
+          state: state || null
+        });
+      }
+
+      // Create donation record
+      const maxDonation = await trx('donations')
+        .max('donationid as maxid')
+        .first();
+      const nextDonationId = maxDonation && maxDonation.maxid ? parseInt(maxDonation.maxid) + 1 : 1;
+
+      // Get donation number for this person (count existing donations + 1)
+      const donationCount = await trx('donations')
+        .where('personid', personId)
+        .count('* as count')
+        .first();
+      const donationNo = parseInt(donationCount.count) + 1;
+
+      // Format date as string (since donationdate is character varying)
+      const donationDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      await trx('donations').insert({
+        donationid: nextDonationId,
+        personid: personId,
+        donationno: donationNo,
+        donationdate: donationDate,
+        donationamount: amount
+      });
+    });
+
+    // Success - redirect with success message
+    let successMessage = `Thank you, ${firstname}! Your donation of $${amount.toFixed(2)} has been processed.`;
+    
+    if (wasNewUser) {
+      // New user - mention they can log in
+      successMessage += ' An account has been created for you. You can log in with your email and password "temp123" (please change it after logging in).';
+    } else {
+      // Existing user
+      successMessage += ' Thank you for your continued support!';
+    }
+    
+    res.redirect('/donate?success=' + encodeURIComponent(successMessage));
+  } catch (error) {
+    console.error('Error processing donation:', error);
+    res.redirect('/donate?error=' + encodeURIComponent('An error occurred while processing your donation. Please try again or contact us for assistance.'));
+  }
 });
 
 app.get('/contact', (req, res) => {
   res.render('public/contact', { currentPage: 'contact', pageTitle: 'Contact Us', pageDescription: 'Get in touch with the Ella Rises team.' });
+});
+
+// 418 I'm a Teapot - Easter Egg Route
+app.get('/418', (req, res) => {
+  res.status(418).render('errors/418', { 
+    currentPage: '418', 
+    pageTitle: "I'm a Teapot",
+    pageDescription: 'HTCPCP/1.0 - The server refuses to brew coffee because it is, permanently, a teapot.'
+  });
 });
 
 app.get('/resources', (req, res) => {
@@ -833,78 +1041,9 @@ app.get('/participants', requireLogin, async (req, res) => {
   }
 });
 
-// GET /manage/participants/new - Show form to add new participant (manager only)
+// GET /manage/participants/new - Redirect to user creation (merged functionality)
 app.get('/manage/participants/new', requireManager, (req, res) => {
-  res.render('admin/participant-form', {
-    currentPage: 'participants',
-    pageTitle: 'Add New Participant',
-    participant: null,
-    error: null
-  });
-});
-
-// POST /manage/participants - Create new participant (manager only)
-app.post('/manage/participants', requireManager, async (req, res) => {
-  try {
-    const { email, firstname, lastname, city, state, phone, birthdate } = req.body;
-
-    // Validate required fields
-    if (!firstname || !lastname) {
-      return res.render('admin/participant-form', {
-        currentPage: 'participants',
-        pageTitle: 'Add New Participant',
-        participant: req.body,
-        error: 'First name and last name are required.'
-      });
-    }
-
-    // Handle email - check foreign key constraint
-    // If email is provided, verify it exists in login table
-    let emailToInsert = null;
-    if (email && email.trim() !== '') {
-      const emailExists = await knex('login')
-        .where('email', email.trim())
-        .first();
-      
-      if (!emailExists) {
-        return res.render('admin/participant-form', {
-          currentPage: 'participants',
-          pageTitle: 'Add New Participant',
-          participant: req.body,
-          error: 'Email must exist in the login system. Please use an email that is already registered, or leave it empty.'
-        });
-      }
-      emailToInsert = email.trim();
-    }
-
-    // Get max personid and add 1
-    const maxPerson = await knex('people')
-      .max('personid as maxid')
-      .first();
-    const nextPersonId = maxPerson && maxPerson.maxid ? parseInt(maxPerson.maxid) + 1 : 1;
-
-    // Insert into people table
-    await knex('people').insert({
-      personid: nextPersonId,
-      email: emailToInsert,
-      firstname: firstname,
-      lastname: lastname,
-      city: city || null,
-      state: state || null,
-      phone: phone || null,
-      birthdate: birthdate || null
-    });
-
-    res.redirect('/participants?message=Participant created successfully!&messageType=success');
-  } catch (error) {
-    console.error('Error creating participant:', error);
-    res.render('admin/participant-form', {
-      currentPage: 'participants',
-      pageTitle: 'Add New Participant',
-      participant: req.body,
-      error: 'An error occurred while creating the participant: ' + error.message
-    });
-  }
+  res.redirect('/admin/users/new');
 });
 
 // GET /manage/participants/:id/edit - Show form to edit participant (manager only)
@@ -1059,24 +1198,103 @@ app.get('/milestones', requireLogin, async (req, res) => {
       .where('email', req.session.user.email)
       .first();
 
-    // Get the logged-in user's milestones (matching by personid AND has a completion date)
+    // Get all milestone types from the system
+    const allMilestoneTypes = await knex('milestonetypes')
+      .orderBy('milestonecategory', 'asc')
+      .orderBy('milestonetypeid', 'asc');
+
+    // Get the logged-in user's milestones with milestone type info (both completed and incomplete)
     let userMilestones = [];
     if (loggedInPerson) {
       userMilestones = await knex('milestones')
+        .leftJoin('milestonetypes', 'milestones.milestonetypeid', 'milestonetypes.milestonetypeid')
         .select(
-          'milestoneid',
-          'personid',
-          'milestoneno',
-          'milestonetitle',
-          'milestonedate'
+          'milestones.milestoneid',
+          'milestones.personid',
+          'milestones.milestoneno',
+          'milestones.milestonetitle',
+          'milestones.milestonedate',
+          'milestones.milestonetypeid',
+          'milestonetypes.milestonecategory',
+          'milestonetypes.milestonelevel'
         )
-        .where('personid', loggedInPerson.personid)
-        .whereNotNull('milestonedate')  // Only completed milestones (has a date)
-        .orderBy('milestonedate', 'desc');
+        .where('milestones.personid', loggedInPerson.personid)
+        .orderBy('milestonetypes.milestonecategory', 'asc')
+        .orderBy('milestonetypes.milestonetypeid', 'asc')
+        .orderBy('milestones.milestonedate', 'asc');
     }
 
+    // Create a map of user's milestones by milestonetypeid
+    const userMilestonesByTypeId = {};
+    userMilestones.forEach(m => {
+      if (m.milestonetypeid) {
+        userMilestonesByTypeId[m.milestonetypeid] = m;
+      }
+    });
+
+    // Build full track structure: all milestone types with user's completion status
+    const milestonesByCategory = {};
+    allMilestoneTypes.forEach(milestoneType => {
+      const category = milestoneType.milestonecategory || 'Uncategorized';
+      if (!milestonesByCategory[category]) {
+        milestonesByCategory[category] = [];
+      }
+
+      // Check if user has completed this milestone type
+      const userMilestone = userMilestonesByTypeId[milestoneType.milestonetypeid];
+      
+      milestonesByCategory[category].push({
+        milestonetypeid: milestoneType.milestonetypeid,
+        milestonecategory: milestoneType.milestonecategory,
+        milestonelevel: milestoneType.milestonelevel,
+        // User's milestone data (if exists)
+        milestoneid: userMilestone?.milestoneid || null,
+        milestonetitle: userMilestone?.milestonetitle || null,
+        milestonedate: userMilestone?.milestonedate || null,
+        isCompleted: userMilestone && userMilestone.milestonedate !== null,
+        isIncomplete: userMilestone && userMilestone.milestonedate === null
+      });
+    });
+
+    // Determine primary track (category with most completed milestones)
+    let primaryTrack = null;
+    let maxCount = 0;
+    Object.entries(milestonesByCategory).forEach(([category, milestones]) => {
+      const completedCount = milestones.filter(m => m.isCompleted).length;
+      if (completedCount > maxCount) {
+        maxCount = completedCount;
+        primaryTrack = category;
+      }
+    });
+
     // Calculate progress (user's completed milestones)
-    const userCompletedCount = userMilestones.length;
+    const userCompletedCount = userMilestones.filter(m => m.milestonedate !== null).length;
+
+    // Get all unique milestone titles that exist in the system
+    const searchTerm = req.query.search ? `%${req.query.search.toLowerCase()}%` : '';
+    let allUniqueMilestonesQuery = knex('milestones')
+      .distinct('milestonetitle')
+      .select('milestonetitle')
+      .whereNotNull('milestonetitle');
+    
+    // Apply search filter if provided
+    if (searchTerm) {
+      allUniqueMilestonesQuery = allUniqueMilestonesQuery.whereRaw('LOWER(milestonetitle) ILIKE ?', [searchTerm]);
+    }
+    
+    const allUniqueMilestones = await allUniqueMilestonesQuery.orderBy('milestonetitle', 'asc');
+
+    // Create a map of completed milestone titles for the current user
+    const completedMilestoneTitles = new Set(
+      userMilestones.map(m => m.milestonetitle)
+    );
+
+    // Build list of all milestones with completion status
+    const allMilestones = allUniqueMilestones.map(m => ({
+      title: m.milestonetitle,
+      isCompleted: completedMilestoneTitles.has(m.milestonetitle),
+      completedDate: userMilestones.find(um => um.milestonetitle === m.milestonetitle)?.milestonedate || null
+    }));
 
     // For managers: get recent completions across all users
     let participantMilestones = [];
@@ -1090,6 +1308,7 @@ app.get('/milestones', requireLogin, async (req, res) => {
           'milestones.milestonedate as completedAt',
           knex.raw("CONCAT(people.firstname, ' ', people.lastname) as participantName")
         )
+        .whereNotNull('milestones.milestonedate')
         .orderBy('milestones.milestonedate', 'desc')
         .limit(20);
     }
@@ -1099,7 +1318,12 @@ app.get('/milestones', requireLogin, async (req, res) => {
       pageTitle: 'Milestones', 
       userMilestones,
       userCompletedCount,
-      participantMilestones
+      milestonesByCategory,
+      primaryTrack,
+      allMilestones,
+      participantMilestones,
+      searchTerm: req.query.search || '',
+      user: req.session.user
     });
   } catch (error) {
     console.error('Error fetching milestones:', error);
@@ -1108,7 +1332,12 @@ app.get('/milestones', requireLogin, async (req, res) => {
       pageTitle: 'Milestones', 
       userMilestones: [],
       userCompletedCount: 0,
-      participantMilestones: []
+      milestonesByCategory: {},
+      primaryTrack: null,
+      allMilestones: [],
+      participantMilestones: [],
+      searchTerm: '',
+      user: req.session.user
     });
   }
 });
@@ -1129,44 +1358,44 @@ app.get('/surveys', requireLogin, async (req, res) => {
       let countQuery;
       
       if (searchTerm) {
-        // Search surveys by event name or question name
+        // Search surveys by event name or description - show all events (each event has a survey)
         query = knex.raw(`
           SELECT DISTINCT
             ed.eventdetailid as surveyid,
             e.eventname as title,
             e.eventdescription as description,
             ed.eventdatetimestart as createdat
-          FROM survey s
-          INNER JOIN event_details ed ON s.eventdetailid = ed.eventdetailid
-          INNER JOIN events e ON ed.eventid = e.eventid
+          FROM events e
+          INNER JOIN event_details ed ON e.eventid = ed.eventid
           WHERE (LOWER(e.eventname) ILIKE ? OR LOWER(e.eventdescription) ILIKE ?)
           ORDER BY ed.eventdatetimestart DESC
           LIMIT ? OFFSET ?
         `, [searchTerm, searchTerm, limit, offset]);
         
         countQuery = knex.raw(`
-          SELECT COUNT(DISTINCT s.eventdetailid) as total
-          FROM survey s
-          INNER JOIN event_details ed ON s.eventdetailid = ed.eventdetailid
-          INNER JOIN events e ON ed.eventid = e.eventid
+          SELECT COUNT(DISTINCT ed.eventdetailid) as total
+          FROM events e
+          INNER JOIN event_details ed ON e.eventid = ed.eventid
           WHERE (LOWER(e.eventname) ILIKE ? OR LOWER(e.eventdescription) ILIKE ?)
         `, [searchTerm, searchTerm]);
       } else {
+        // Show all events (assuming each event has a survey)
         query = knex.raw(`
           SELECT DISTINCT
             ed.eventdetailid as surveyid,
             e.eventname as title,
             e.eventdescription as description,
             ed.eventdatetimestart as createdat
-          FROM survey s
-          INNER JOIN event_details ed ON s.eventdetailid = ed.eventdetailid
-          INNER JOIN events e ON ed.eventid = e.eventid
+          FROM events e
+          INNER JOIN event_details ed ON e.eventid = ed.eventid
           ORDER BY ed.eventdatetimestart DESC
           LIMIT ? OFFSET ?
         `, [limit, offset]);
         
         countQuery = knex.raw(`
-          SELECT COUNT(DISTINCT eventdetailid) as total FROM survey
+          SELECT COUNT(DISTINCT ed.eventdetailid) as total
+          FROM events e
+          INNER JOIN event_details ed ON e.eventid = ed.eventid
         `);
       }
 
@@ -1705,15 +1934,19 @@ app.post('/manage/surveys', requireManager, async (req, res) => {
     `, [nextEventId, surveytitle, 'Survey', surveydescription || null]);
 
     // Insert into event_details table
-    // Use current date/time for eventdatetimestart, and set end time to same day
-    const eventStartDate = new Date();
-    const eventEndDate = new Date(eventStartDate);
-    eventEndDate.setHours(eventStartDate.getHours() + 2); // Default 2 hour duration
+    // Set created date to today (current date/time)
+    // This represents when the survey was created
+    const today = new Date();
+    const eventEndDate = new Date(today);
+    eventEndDate.setHours(today.getHours() + 2); // Default 2 hour duration for the event
     
     await knex.raw(`
       INSERT INTO event_details (eventdetailid, eventid, eventdatetimestart, eventdatetimeend)
       VALUES (?, ?, ?, ?)
-    `, [nextDetailId, nextEventId, eventStartDate, eventEndDate]);
+    `, [nextDetailId, nextEventId, today, eventEndDate]);
+    
+    // Note: No survey responses are created here - the survey table will be empty
+    // until participants actually submit responses to this survey
 
     res.redirect('/surveys?message=Survey created successfully!&messageType=success');
   } catch (error) {
@@ -2033,6 +2266,33 @@ app.get('/donations', requireLogin, async (req, res) => {
 });
 
 // GET /manage/donations/new - Show form to add new donation (manager only)
+// API endpoint to search for users/participants
+app.get('/api/search-users', requireManager, async (req, res) => {
+  try {
+    const searchTerm = req.query.q || '';
+    
+    if (!searchTerm || searchTerm.length < 2) {
+      return res.json([]);
+    }
+
+    const users = await knex('people')
+      .select('personid', 'firstname', 'lastname', 'email', 'city', 'state')
+      .where(function() {
+        this.whereRaw('LOWER(firstname) ILIKE ?', [`%${searchTerm.toLowerCase()}%`])
+          .orWhereRaw('LOWER(lastname) ILIKE ?', [`%${searchTerm.toLowerCase()}%`])
+          .orWhereRaw('LOWER(email) ILIKE ?', [`%${searchTerm.toLowerCase()}%`]);
+      })
+      .orderBy('lastname', 'asc')
+      .orderBy('firstname', 'asc')
+      .limit(20);
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error searching users:', error);
+    res.status(500).json({ error: 'Error searching users' });
+  }
+});
+
 app.get('/manage/donations/new', requireManager, (req, res) => {
   res.render('admin/donation-form', {
     currentPage: 'donations',
@@ -2130,7 +2390,9 @@ app.get('/manage/donations/:id/edit', requireManager, async (req, res) => {
         personid: donation.personid,
         donationamount: donation.donationamount,
         donationdate: formattedDate,
-        donorName: donation.firstname && donation.lastname ? `${donation.firstname} ${donation.lastname}` : ''
+        firstname: donation.firstname || '',
+        lastname: donation.lastname || '',
+        email: donation.email || ''
       },
       error: null
     });
@@ -2264,14 +2526,80 @@ app.get('/manage/milestones/:personid', requireManager, async (req, res) => {
       });
     }
 
-    // Get all milestones for this participant (both completed and incomplete)
-    const allMilestones = await knex('milestones')
-      .where('personid', personid)
-      .orderBy('milestoneno', 'asc');
+    // Get all milestone types from the system
+    const allMilestoneTypes = await knex('milestonetypes')
+      .orderBy('milestonecategory', 'asc')
+      .orderBy('milestonetypeid', 'asc');
 
-    // Separate completed and incomplete milestones
-    const completedMilestones = allMilestones.filter(m => m.milestonedate !== null);
-    const incompleteMilestones = allMilestones.filter(m => m.milestonedate === null);
+    // Get all milestones for this participant with milestone type info
+    const userMilestones = await knex('milestones')
+      .leftJoin('milestonetypes', 'milestones.milestonetypeid', 'milestonetypes.milestonetypeid')
+      .where('milestones.personid', personid)
+      .select(
+        'milestones.milestoneid',
+        'milestones.personid',
+        'milestones.milestoneno',
+        'milestones.milestonetitle',
+        'milestones.milestonedate',
+        'milestones.milestonetypeid',
+        'milestonetypes.milestonecategory',
+        'milestonetypes.milestonelevel'
+      )
+      .orderBy('milestonetypes.milestonecategory', 'asc')
+      .orderBy('milestonetypes.milestonetypeid', 'asc')
+      .orderBy('milestones.milestonedate', 'asc');
+
+    // Create a map of user's milestones by milestonetypeid
+    const userMilestonesByTypeId = {};
+    userMilestones.forEach(m => {
+      if (m.milestonetypeid) {
+        userMilestonesByTypeId[m.milestonetypeid] = m;
+      }
+    });
+
+    // Build full track structure: all milestone types with user's completion status
+    const milestonesByCategory = {};
+    allMilestoneTypes.forEach(milestoneType => {
+      const category = milestoneType.milestonecategory || 'Uncategorized';
+      if (!milestonesByCategory[category]) {
+        milestonesByCategory[category] = [];
+      }
+
+      // Check if user has completed this milestone type
+      const userMilestone = userMilestonesByTypeId[milestoneType.milestonetypeid];
+      
+      milestonesByCategory[category].push({
+        milestonetypeid: milestoneType.milestonetypeid,
+        milestonecategory: milestoneType.milestonecategory,
+        milestonelevel: milestoneType.milestonelevel,
+        // User's milestone data (if exists)
+        milestoneid: userMilestone?.milestoneid || null,
+        milestonetitle: userMilestone?.milestonetitle || null,
+        milestonedate: userMilestone?.milestonedate || null,
+        isCompleted: userMilestone && userMilestone.milestonedate !== null,
+        isIncomplete: userMilestone && userMilestone.milestonedate === null
+      });
+    });
+
+    // Determine primary track (category with most completed milestones)
+    let primaryTrack = null;
+    let maxCount = 0;
+    Object.entries(milestonesByCategory).forEach(([category, milestones]) => {
+      const completedCount = milestones.filter(m => m.isCompleted).length;
+      if (completedCount > maxCount) {
+        maxCount = completedCount;
+        primaryTrack = category;
+      }
+    });
+
+    // Separate completed and incomplete for backward compatibility
+    const completedMilestones = userMilestones.filter(m => m.milestonedate !== null);
+    const incompleteMilestones = userMilestones.filter(m => m.milestonedate === null);
+
+    // Get all milestone types for the form dropdown
+    const milestoneTypes = await knex('milestonetypes')
+      .orderBy('milestonecategory', 'asc')
+      .orderBy('milestonetypeid', 'asc');
 
     res.render('admin/milestones-participant', {
       currentPage: 'milestones',
@@ -2279,6 +2607,9 @@ app.get('/manage/milestones/:personid', requireManager, async (req, res) => {
       participant,
       completedMilestones,
       incompleteMilestones,
+      milestonesByCategory,
+      primaryTrack,
+      milestoneTypes,
       message: req.query.message || null,
       messageType: req.query.messageType || null
     });
@@ -2294,13 +2625,13 @@ app.get('/manage/milestones/:personid', requireManager, async (req, res) => {
 
 app.post('/manage/milestones/assign', requireManager, async (req, res) => {
   try {
-    const { personid, milestonetitle, milestonedate } = req.body;
+    const { personid, milestonetitle, milestonedate, milestonetypeid } = req.body;
 
     // Validate required fields
     if (!personid || !milestonetitle || !milestonedate) {
       return res.status(400).json({ 
         success: false, 
-        message: 'All fields are required' 
+        message: 'Person ID, milestone title, and date are required' 
       });
     }
 
@@ -2334,24 +2665,133 @@ app.post('/manage/milestones/assign', requireManager, async (req, res) => {
     const nextMilestoneId = maxMilestone && maxMilestone.maxid ? parseInt(maxMilestone.maxid) + 1 : 1;
 
     // Insert milestone - milestoneid will be explicitly set to avoid sequence issues
-    await knex('milestones').insert({
+    const insertData = {
       milestoneid: nextMilestoneId,
       personid: parseInt(personid),
       milestoneno: nextMilestoneNo,
       milestonetitle: milestonetitle,
       milestonedate: milestonedate
-    });
+    };
 
-    res.json({ 
-      success: true, 
+    // Add milestonetypeid if provided
+    if (milestonetypeid) {
+      insertData.milestonetypeid = parseInt(milestonetypeid);
+    }
+
+    await knex('milestones').insert(insertData);
+
+    res.json({
+      success: true,
       message: 'Milestone assigned successfully',
       redirect: `/manage/milestones/${personid}?message=Milestone assigned successfully!&messageType=success`
     });
   } catch (error) {
     console.error('Error assigning milestone:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error assigning milestone: ' + error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning milestone: ' + error.message
+    });
+  }
+});
+
+// PUT /manage/milestones/:id - Update milestone (manager only)
+app.put('/manage/milestones/:id', requireManager, async (req, res) => {
+  try {
+    const milestoneId = parseInt(req.params.id);
+    const { personid, milestonetitle, milestonedate, milestonetypeid } = req.body;
+
+    // Validate required fields
+    if (!milestonetitle) {
+      return res.status(400).json({
+        success: false,
+        message: 'Milestone title is required.'
+      });
+    }
+
+    // Check if milestone exists and get personid
+    const existingMilestone = await knex('milestones')
+      .where('milestoneid', milestoneId)
+      .first();
+
+    if (!existingMilestone) {
+      return res.status(404).json({
+        success: false,
+        message: 'Milestone not found.'
+      });
+    }
+
+    // Use personid from milestone if not provided in body
+    const targetPersonId = personid || existingMilestone.personid;
+
+    // Update milestone
+    const updateData = {
+      milestonetitle: milestonetitle
+    };
+
+    // If date is provided, set it; if empty string, set to null (incomplete)
+    if (milestonedate && milestonedate.trim() !== '') {
+      updateData.milestonedate = milestonedate;
+    } else {
+      updateData.milestonedate = null;
+    }
+
+    // Update milestonetypeid if provided
+    if (milestonetypeid) {
+      updateData.milestonetypeid = parseInt(milestonetypeid);
+    }
+
+    await knex('milestones')
+      .where('milestoneid', milestoneId)
+      .update(updateData);
+
+    res.json({
+      success: true,
+      message: 'Milestone updated successfully',
+      redirect: `/manage/milestones/${targetPersonId}?message=Milestone updated successfully!&messageType=success`
+    });
+  } catch (error) {
+    console.error('Error updating milestone:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating milestone: ' + error.message
+    });
+  }
+});
+
+// DELETE /manage/milestones/:id - Delete milestone (manager only)
+app.delete('/manage/milestones/:id', requireManager, async (req, res) => {
+  try {
+    const milestoneId = parseInt(req.params.id);
+
+    // Get milestone to find personid for redirect
+    const milestone = await knex('milestones')
+      .where('milestoneid', milestoneId)
+      .first();
+
+    if (!milestone) {
+      return res.status(404).json({
+        success: false,
+        message: 'Milestone not found.'
+      });
+    }
+
+    const personid = milestone.personid;
+
+    // Delete milestone
+    await knex('milestones')
+      .where('milestoneid', milestoneId)
+      .del();
+
+    res.json({
+      success: true,
+      message: 'Milestone deleted successfully',
+      redirect: `/manage/milestones/${personid}?message=Milestone deleted successfully!&messageType=success`
+    });
+  } catch (error) {
+    console.error('Error deleting milestone:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting milestone: ' + error.message
     });
   }
 });
@@ -2449,14 +2889,14 @@ app.get('/admin/users/new', requireManager, (req, res) => {
 // POST /admin/users - Create new user
 app.post('/admin/users', requireManager, async (req, res) => {
   try {
-    const { email, password, level, firstname, lastname } = req.body;
+    const { email, password, level, firstname, lastname, phone, city, state, birthdate } = req.body;
 
     // Validate required fields
     if (!email || !level) {
       return res.render('admin/user-form', {
         currentPage: 'admin',
         pageTitle: 'Add New User',
-        user: { email, level, firstname, lastname },
+        user: req.body,
         error: 'Email and role are required.'
       });
     }
@@ -2473,47 +2913,59 @@ app.post('/admin/users', requireManager, async (req, res) => {
       return res.render('admin/user-form', {
         currentPage: 'admin',
         pageTitle: 'Add New User',
-        user: { email, level, firstname, lastname },
+        user: req.body,
         error: 'A user with this email already exists.'
       });
     }
 
-    // Insert into login table
-    await knex('login').insert({
-      email: email,
-      password: userPassword, // TODO: Hash with bcrypt in production
-      level: level
-    });
+    // Clean phone number - strip all non-numeric characters
+    const cleanedPhone = phone ? phone.replace(/\D/g, '') : null;
 
-    // If name provided, check if person exists and update/create
-    if (firstname || lastname) {
-      const existingPerson = await knex('people')
+    // Start transaction to ensure both user and participant are created
+    await knex.transaction(async (trx) => {
+      // Insert into login table
+      await trx('login').insert({
+        email: email,
+        password: userPassword, // TODO: Hash with bcrypt in production
+        level: level
+      });
+
+      // Check if person exists and update/create
+      const existingPerson = await trx('people')
         .where('email', email)
         .first();
 
       if (existingPerson) {
         // Update existing person
-        await knex('people')
+        await trx('people')
           .where('email', email)
           .update({
             firstname: firstname || existingPerson.firstname,
-            lastname: lastname || existingPerson.lastname
+            lastname: lastname || existingPerson.lastname,
+            phone: cleanedPhone || existingPerson.phone,
+            city: city || existingPerson.city,
+            state: state || existingPerson.state,
+            birthdate: birthdate || existingPerson.birthdate
           });
       } else {
-        // Create new person (we'll need personid - let's get max and add 1)
-        const maxPerson = await knex('people')
+        // Create new person
+        const maxPerson = await trx('people')
           .max('personid as maxid')
           .first();
         const nextPersonId = maxPerson && maxPerson.maxid ? parseInt(maxPerson.maxid) + 1 : 1;
 
-        await knex('people').insert({
+        await trx('people').insert({
           personid: nextPersonId,
           email: email,
           firstname: firstname || '',
-          lastname: lastname || ''
+          lastname: lastname || '',
+          phone: cleanedPhone || null,
+          city: city || null,
+          state: state || null,
+          birthdate: birthdate || null
         });
       }
-    }
+    });
 
     res.redirect('/admin/users?message=User created successfully!&messageType=success');
   } catch (error) {
@@ -2555,6 +3007,10 @@ app.get('/admin/users/:email/edit', requireManager, async (req, res) => {
         level: loginUser.level,
         firstname: person ? person.firstname : '',
         lastname: person ? person.lastname : '',
+        phone: person ? person.phone : '',
+        city: person ? person.city : '',
+        state: person ? person.state : '',
+        birthdate: person && person.birthdate ? new Date(person.birthdate).toISOString().split('T')[0] : '',
         personid: person ? person.personid : null
       },
       error: null
@@ -2573,7 +3029,7 @@ app.get('/admin/users/:email/edit', requireManager, async (req, res) => {
 app.post('/admin/users/:email', requireManager, async (req, res) => {
   try {
     const email = decodeURIComponent(req.params.email);
-    const { password, level, firstname, lastname } = req.body;
+    const { password, level, firstname, lastname, phone, city, state, birthdate } = req.body;
 
     // Check if user exists
     const existingUser = await knex('login')
@@ -2602,16 +3058,23 @@ app.post('/admin/users/:email', requireManager, async (req, res) => {
       .where('email', email)
       .first();
 
+    // Clean phone number - strip all non-numeric characters
+    const cleanedPhone = phone ? phone.replace(/\D/g, '') : null;
+
     if (existingPerson) {
       // Update existing person
       await knex('people')
         .where('email', email)
         .update({
           firstname: firstname || existingPerson.firstname,
-          lastname: lastname || existingPerson.lastname
+          lastname: lastname || existingPerson.lastname,
+          phone: cleanedPhone !== null ? cleanedPhone : existingPerson.phone,
+          city: city !== undefined ? city : existingPerson.city,
+          state: state !== undefined ? state : existingPerson.state,
+          birthdate: birthdate || existingPerson.birthdate
         });
-    } else if (firstname || lastname) {
-      // Create new person if name provided
+    } else {
+      // Create new person if any participant data provided
       const maxPerson = await knex('people')
         .max('personid as maxid')
         .first();
@@ -2621,7 +3084,11 @@ app.post('/admin/users/:email', requireManager, async (req, res) => {
         personid: nextPersonId,
         email: email,
         firstname: firstname || '',
-        lastname: lastname || ''
+        lastname: lastname || '',
+        phone: cleanedPhone || null,
+        city: city || null,
+        state: state || null,
+        birthdate: birthdate || null
       });
     }
 

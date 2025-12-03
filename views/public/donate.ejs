@@ -18,55 +18,110 @@
             <h2>Make a Gift</h2>
             <p>Choose a giving level or enter a custom amount.</p>
 
-            <div class="amount-options">
-              <button class="amount-btn" data-amount="25">$25</button>
-              <button class="amount-btn" data-amount="50">$50</button>
-              <button class="amount-btn active" data-amount="100">$100</button>
-              <button class="amount-btn" data-amount="250">$250</button>
-              <button class="amount-btn" data-amount="500">$500</button>
-              <button class="amount-btn" data-amount="1000">$1,000</button>
-            </div>
-
-            <div class="custom-amount">
-              <label for="customAmount">Or enter a custom amount:</label>
-              <div class="input-with-prefix">
-                <span class="prefix">$</span>
-                <input type="number" id="customAmount" name="customAmount" placeholder="Other amount">
+            <% if (error) { %>
+              <div class="alert alert-error" style="margin-bottom: var(--space-lg);">
+                <%= error %>
               </div>
-            </div>
+            <% } %>
 
-            <div class="donation-frequency">
-              <label>Donation frequency:</label>
-              <div class="frequency-options">
-                <label class="radio-option">
-                  <input type="radio" name="frequency" value="once" checked>
-                  <span>One-time</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="frequency" value="monthly">
-                  <span>Monthly</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="frequency" value="annual">
-                  <span>Annually</span>
-                </label>
+            <% if (success) { %>
+              <div class="alert alert-success" style="margin-bottom: var(--space-lg);">
+                <%= success %>
               </div>
-            </div>
+            <% } %>
 
-            <div class="designation">
-              <label for="designation">Designate your gift (optional):</label>
-              <select id="designation" name="designation">
-                <option value="greatest-need">Where it's needed most</option>
-                <option value="mentorship">Mentorship Program</option>
-                <option value="scholarships">Scholarships</option>
-                <option value="workshops">Workshops & Education</option>
-                <option value="community">Community Programs</option>
-              </select>
-            </div>
+            <form method="POST" action="/donate" id="donationForm">
+              <!-- Donor Information -->
+              <div class="form-section">
+                <h3>Your Information</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="firstname">First Name *</label>
+                    <input type="text" id="firstname" name="firstname" required value="<%= userInfo ? userInfo.firstname : '' %>">
+                  </div>
+                  <div class="form-group">
+                    <label for="lastname">Last Name *</label>
+                    <input type="text" id="lastname" name="lastname" required value="<%= userInfo ? userInfo.lastname : '' %>">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="email">Email *</label>
+                  <input type="email" id="email" name="email" required value="<%= userInfo ? userInfo.email : '' %>">
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" name="phone" value="<%= userInfo ? userInfo.phone : '' %>">
+                  </div>
+                  <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" name="city" value="<%= userInfo ? userInfo.city : '' %>">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="state">State</label>
+                  <input type="text" id="state" name="state" value="<%= userInfo ? userInfo.state : '' %>">
+                </div>
+              </div>
 
-            <button class="btn btn-primary btn-lg btn-full">Donate Now</button>
+              <!-- Donation Amount -->
+              <div class="form-section">
+                <h3>Donation Amount</h3>
+                <div class="amount-options">
+                  <button type="button" class="amount-btn" data-amount="25">$25</button>
+                  <button type="button" class="amount-btn" data-amount="50">$50</button>
+                  <button type="button" class="amount-btn active" data-amount="100">$100</button>
+                  <button type="button" class="amount-btn" data-amount="250">$250</button>
+                  <button type="button" class="amount-btn" data-amount="500">$500</button>
+                  <button type="button" class="amount-btn" data-amount="1000">$1,000</button>
+                </div>
 
-            <p class="donate-note">Ella Rises is a 501(c)(3) nonprofit organization. Your donation is tax-deductible to the extent allowed by law.</p>
+                <div class="custom-amount">
+                  <label for="customAmount">Or enter a custom amount:</label>
+                  <div class="input-with-prefix">
+                    <span class="prefix">$</span>
+                    <input type="number" id="customAmount" name="customAmount" step="0.01" min="1" placeholder="Other amount">
+                  </div>
+                </div>
+                <input type="hidden" id="donationAmount" name="donationAmount" value="100" required>
+              </div>
+
+              <!-- Donation Options -->
+              <div class="form-section">
+                <div class="donation-frequency">
+                  <label>Donation frequency:</label>
+                  <div class="frequency-options">
+                    <label class="radio-option">
+                      <input type="radio" name="frequency" value="once" checked>
+                      <span>One-time</span>
+                    </label>
+                    <label class="radio-option">
+                      <input type="radio" name="frequency" value="monthly">
+                      <span>Monthly</span>
+                    </label>
+                    <label class="radio-option">
+                      <input type="radio" name="frequency" value="annual">
+                      <span>Annually</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="designation">
+                  <label for="designation">Designate your gift (optional):</label>
+                  <select id="designation" name="designation">
+                    <option value="greatest-need">Where it's needed most</option>
+                    <option value="mentorship">Mentorship Program</option>
+                    <option value="scholarships">Scholarships</option>
+                    <option value="workshops">Workshops & Education</option>
+                    <option value="community">Community Programs</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-lg btn-full">Donate Now</button>
+
+              <p class="donate-note">Ella Rises is a 501(c)(3) nonprofit organization. Your donation is tax-deductible to the extent allowed by law.</p>
+            </form>
           </div>
 
           <!-- Impact Info -->
@@ -185,4 +240,115 @@
     </section>
 
 <%- include('../partials/footer') %>
+
+<style>
+  .form-section {
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-xl);
+    border-bottom: 1px solid var(--border-light);
+  }
+  .form-section:last-of-type {
+    border-bottom: none;
+  }
+  .form-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: var(--space-md);
+    color: var(--text-primary);
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+  .form-group {
+    margin-bottom: var(--space-md);
+  }
+  .form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: var(--space-xs);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="email"],
+  .form-group input[type="tel"],
+  .form-group select {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 2px solid #d1d5db;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    background-color: var(--white);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--salmon);
+    box-shadow: 0 0 0 3px rgba(var(--salmon-rgb), 0.2);
+  }
+  .form-group input:hover,
+  .form-group select:hover {
+    border-color: #9ca3af;
+  }
+  .alert {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+  }
+  .alert-error {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+  .alert-success {
+    background-color: #d1fae5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+  }
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  // Handle amount button clicks
+  document.querySelectorAll('.amount-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Remove active class from all buttons
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      // Add active class to clicked button
+      this.classList.add('active');
+      // Set the donation amount
+      const amount = this.getAttribute('data-amount');
+      document.getElementById('donationAmount').value = amount;
+      // Clear custom amount input
+      document.getElementById('customAmount').value = '';
+    });
+  });
+
+  // Handle custom amount input
+  document.getElementById('customAmount').addEventListener('input', function() {
+    const customAmount = parseFloat(this.value);
+    if (!isNaN(customAmount) && customAmount > 0) {
+      // Remove active class from all buttons
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      // Set the donation amount
+      document.getElementById('donationAmount').value = customAmount;
+    }
+  });
+
+  // Handle form submission
+  document.getElementById('donationForm').addEventListener('submit', function(e) {
+    const amount = parseFloat(document.getElementById('donationAmount').value);
+    if (!amount || amount <= 0) {
+      e.preventDefault();
+      alert('Please select or enter a donation amount.');
+      return false;
+    }
+  });
+</script>
 
