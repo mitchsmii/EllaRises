@@ -1,0 +1,297 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact" style="padding: var(--space-lg) 0;">
+      <div class="container">
+        <a href="/surveys" class="btn btn-sm btn-outline" style="margin-bottom: var(--space-sm);">← Back</a>
+        <h1 style="font-size: 1.5rem; margin-bottom: var(--space-xs);"><%= surveyInfo.title %></h1>
+        <p class="text-muted" style="font-size: 0.85rem; margin: 0;">
+          <%= totalParticipants %> participant<%= totalParticipants !== 1 ? 's' : '' %><% if (surveyInfo.eventDate) { %> · <%= new Date(surveyInfo.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %><% } %>
+        </p>
+      </div>
+    </section>
+
+    <!-- Responses Table -->
+    <section style="padding: var(--space-lg) 0 var(--space-2xl);">
+      <div class="container">
+        <% if (participants && participants.length > 0) { %>
+          <% 
+            // Separate numeric questions from text questions
+            const numericQuestions = questions.filter(q => {
+              const qName = q.surveyquestionname.toLowerCase();
+              return qName.includes('score') || qName.includes('rating');
+            });
+            const textQuestions = questions.filter(q => {
+              const qName = q.surveyquestionname.toLowerCase();
+              return !qName.includes('score') && !qName.includes('rating');
+            });
+          %>
+          <div class="data-table-wrapper">
+            <table class="data-table compact-table">
+              <thead>
+                <tr>
+                  <th>Participant</th>
+                  <% numericQuestions.forEach(q => { %>
+                    <th><%= q.surveyquestionname.replace('Survey', '').replace('Score', '') %></th>
+                  <% }) %>
+                  <% if (textQuestions.length > 0) { %>
+                    <th>Comments</th>
+                  <% } %>
+                </tr>
+              </thead>
+              <tbody>
+                <% participants.forEach((participant, idx) => { %>
+                  <tr>
+                    <td>
+                      <strong><%= participant.name %></strong>
+                    </td>
+                    <% numericQuestions.forEach(q => { %>
+                      <% const answer = participant.responses.find(r => r.questionno === q.surveyquestionno); %>
+                      <td>
+                        <% if (answer && answer.response !== null && answer.response !== '') { %>
+                          <% const numVal = parseFloat(answer.response); %>
+                          <% if (!isNaN(numVal) && numVal <= 5) { %>
+                            <span class="score-badge score-<%= Math.round(numVal) %>"><%= answer.response %></span>
+                          <% } else { %>
+                            <%= answer.response %>
+                          <% } %>
+                        <% } else { %>
+                          —
+                        <% } %>
+                      </td>
+                    <% }) %>
+                    <% if (textQuestions.length > 0) { %>
+                      <% 
+                        const hasComments = textQuestions.some(q => {
+                          const answer = participant.responses.find(r => r.questionno === q.surveyquestionno);
+                          return answer && answer.response && answer.response.trim() !== '';
+                        });
+                      %>
+                      <td>
+                        <% if (hasComments) { %>
+                          <button class="btn btn-sm btn-outline view-comments-btn" data-idx="<%= idx %>">View</button>
+                        <% } else { %>
+                          —
+                        <% } %>
+                      </td>
+                    <% } %>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No responses yet.</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Comments Modal -->
+    <div id="commentsModal" class="comments-modal">
+      <div class="comments-modal-content">
+        <div class="comments-modal-header">
+          <div class="comments-avatar" id="modalAvatar">D</div>
+          <h3 id="modalParticipantName">Name</h3>
+          <button class="comments-close" id="closeCommentsModal">&times;</button>
+        </div>
+        <div class="comments-body" id="commentsContent"></div>
+      </div>
+    </div>
+
+    <style>
+      .compact-table th, .compact-table td {
+        padding: var(--space-sm) var(--space-md) !important;
+        font-size: 0.9rem;
+      }
+      .compact-table th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+      }
+      .compact-table td {
+        vertical-align: middle;
+        text-align: center;
+      }
+      .compact-table td:first-child {
+        text-align: left;
+      }
+      .score-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-weight: 600;
+        font-size: 0.8rem;
+      }
+      .score-1, .score-2 { background: #fee2e2; color: #dc2626; }
+      .score-3 { background: #fef3c7; color: #d97706; }
+      .score-4 { background: #d1fae5; color: #059669; }
+      .score-5 { background: #a7f3d0; color: #047857; }
+
+      /* Comments Modal */
+      .comments-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-lg);
+      }
+      .comments-modal-content {
+        background: var(--white);
+        border-radius: var(--radius-xl);
+        width: 100%;
+        max-width: 480px;
+        max-height: 70vh;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        overflow: hidden;
+        animation: modalIn 0.2s ease-out;
+      }
+      @keyframes modalIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .comments-modal-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        padding: var(--space-lg);
+        border-bottom: 1px solid var(--border-light);
+        background: var(--bg-light);
+      }
+      .comments-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--peach), var(--salmon));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+      .comments-modal-header h3 {
+        flex: 1;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .comments-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+      }
+      .comments-close:hover {
+        background: var(--border-light);
+        color: var(--text-primary);
+      }
+      .comments-body {
+        padding: var(--space-lg);
+        overflow-y: auto;
+        max-height: calc(70vh - 80px);
+      }
+      .comment-item {
+        margin-bottom: var(--space-lg);
+      }
+      .comment-item:last-child {
+        margin-bottom: 0;
+      }
+      .comment-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--salmon);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: var(--space-xs);
+      }
+      .comment-text {
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        line-height: 1.5;
+        background: var(--bg-light);
+        padding: var(--space-sm) var(--space-md);
+        border-radius: var(--radius-md);
+      }
+    </style>
+
+    <script>
+      // Store participant data for modal
+      const participantsData = <%- JSON.stringify(participants.map(p => ({
+        name: p.name,
+        responses: p.responses
+      }))) %>;
+      
+      const textQuestions = <%- JSON.stringify(questions.filter(q => {
+        const qName = q.surveyquestionname.toLowerCase();
+        return !qName.includes('score') && !qName.includes('rating');
+      })) %>;
+
+      const modal = document.getElementById('commentsModal');
+      const modalName = document.getElementById('modalParticipantName');
+      const modalAvatar = document.getElementById('modalAvatar');
+      const commentsContent = document.getElementById('commentsContent');
+      const closeBtn = document.getElementById('closeCommentsModal');
+
+      document.querySelectorAll('.view-comments-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          const participant = participantsData[idx];
+          
+          modalName.textContent = participant.name;
+          modalAvatar.textContent = (participant.name.charAt(0) || '?').toUpperCase();
+          
+          let html = '';
+          textQuestions.forEach(q => {
+            const answer = participant.responses.find(r => r.questionno === q.surveyquestionno);
+            if (answer && answer.response && answer.response.trim() !== '') {
+              // Clean up the label
+              let label = q.surveyquestionname
+                .replace('Survey', '')
+                .replace(/([A-Z])/g, ' $1')
+                .trim();
+              html += `
+                <div class="comment-item">
+                  <div class="comment-label">${label}</div>
+                  <div class="comment-text">${answer.response}</div>
+                </div>
+              `;
+            }
+          });
+          
+          commentsContent.innerHTML = html || '<p class="text-muted">No comments provided.</p>';
+          modal.style.display = 'flex';
+        });
+      });
+
+      closeBtn.addEventListener('click', () => modal.style.display = 'none');
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') modal.style.display = 'none';
+      });
+    </script>
+
+<%- include('../partials/footer') %>

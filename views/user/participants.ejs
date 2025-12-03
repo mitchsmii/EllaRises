@@ -1,92 +1,180 @@
 <%- include('../partials/header') %>
 
     <!-- Page Hero -->
-    <section class="page-hero">
+    <section class="page-hero compact">
       <div class="container">
-        <p class="eyebrow"><%= user.role === 'manager' ? 'Admin' : 'View' %></p>
+        <p class="eyebrow"><%= user.role === 'manager' ? 'Admin' : 'Community' %></p>
         <h1>Program <em>Participants</em></h1>
         <p class="page-lead">
           <% if (user.role === 'manager') { %>
             View and manage all program participants.
           <% } else { %>
-            Browse our community of participants.
+            Meet the amazing participants in our programs.
           <% } %>
         </p>
-        <% if (user.role === 'manager') { %>
-          <div class="hero-actions">
-            <a href="/participants/new" class="btn btn-primary">+ Add Participant</a>
+      </div>
+    </section>
+
+    <!-- Participants Section -->
+    <section class="section">
+      <div class="container">
+        <!-- Stats and Search -->
+        <div class="participants-header">
+          <div class="participants-stats">
+            <span class="stat-number"><%= totalParticipants %></span>
+            <span class="stat-label">Total Participants</span>
+          </div>
+          
+          <div style="display: flex; gap: var(--space-md); align-items: center; flex-wrap: wrap;">
+            <form method="GET" action="/participants" class="participants-search-form">
+              <input 
+                type="text" 
+                name="search" 
+                placeholder="Search by name, email, or location..." 
+                value="<%= searchTerm %>"
+                class="search-input"
+              >
+              <button type="submit" class="btn btn-primary">Search</button>
+              <% if (searchTerm) { %>
+                <a href="/participants" class="btn btn-outline">Clear</a>
+              <% } %>
+            </form>
+            <% if (user.role === 'manager') { %>
+              <a href="/manage/participants/new" class="btn btn-primary">+ Add Participant</a>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <% if (typeof message !== 'undefined' && message) { %>
+          <div class="alert alert-<%= messageType === 'success' ? 'success' : 'error' %>" style="margin-bottom: var(--space-xl);">
+            <%= message %>
+          </div>
+        <% } %>
+
+        <!-- Participants List -->
+        <% if (participants && participants.length > 0) { %>
+          <div class="participants-list">
+            <% participants.forEach(participant => { 
+              const initials = (participant.firstName.charAt(0) || '') + (participant.lastName.charAt(0) || '');
+              const fullName = `${participant.firstName} ${participant.lastName}`.trim() || 'Unknown';
+            %>
+              <div class="participant-item">
+                <div class="participant-item-avatar">
+                  <%= initials || '?' %>
+                </div>
+                <div class="participant-item-info">
+                  <h3><%= fullName %></h3>
+                  <div class="participant-item-details">
+                    <% if (participant.email) { %>
+                      <span class="detail-item">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <path d="M2 4l6 4 6-4M2 4h12v8H2V4z"/>
+                        </svg>
+                        <%= participant.email %>
+                      </span>
+                    <% } %>
+                    <% if (participant.city || participant.state) { %>
+                      <span class="detail-item">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <path d="M8 2C5.8 2 4 3.8 4 6c0 3 4 8 4 8s4-5 4-8c0-2.2-1.8-4-4-4z"/>
+                          <circle cx="8" cy="6" r="1.5"/>
+                        </svg>
+                        <%= [participant.city, participant.state].filter(Boolean).join(', ') %>
+                      </span>
+                    <% } %>
+                  </div>
+                </div>
+                <div class="participant-item-actions">
+                  <% if (user.role === 'manager') { %>
+                    <a href="/manage/milestones/<%= participant.id %>" class="btn btn-sm btn-outline">Milestones</a>
+                    <a href="/manage/participants/<%= participant.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                    <button class="btn btn-sm btn-danger delete-participant-btn" data-id="<%= participant.id %>" data-name="<%= fullName %>">Delete</button>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+
+          <!-- Pagination -->
+          <% if (totalPages > 1) { %>
+            <div class="pagination">
+              <span class="pagination-info">
+                Showing page <%= currentPageNum %> of <%= totalPages %> (<%= totalParticipants %> total)
+              </span>
+              <div class="pagination-controls">
+                <% if (hasPrevPage) { %>
+                  <a href="/participants?page=<%= currentPageNum - 1 %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link">Previous</a>
+                <% } else { %>
+                  <span class="pagination-link disabled">Previous</span>
+                <% } %>
+                
+                <% for (let i = Math.max(1, currentPageNum - 2); i <= Math.min(totalPages, currentPageNum + 2); i++) { %>
+                  <% if (i === currentPageNum) { %>
+                    <span class="pagination-link active"><%= i %></span>
+                  <% } else { %>
+                    <a href="/participants?page=<%= i %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link"><%= i %></a>
+                  <% } %>
+                <% } %>
+                
+                <% if (currentPageNum < totalPages - 2) { %>
+                  <span class="pagination-ellipsis">...</span>
+                  <a href="/participants?page=<%= totalPages %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link"><%= totalPages %></a>
+                <% } %>
+                
+                <% if (hasNextPage) { %>
+                  <a href="/participants?page=<%= currentPageNum + 1 %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link">Next</a>
+                <% } else { %>
+                  <span class="pagination-link disabled">Next</span>
+                <% } %>
+              </div>
+            </div>
+          <% } %>
+        <% } else { %>
+          <div class="empty-state">
+            <p><%= searchTerm ? 'No participants found matching your search.' : 'No participants found.' %></p>
+            <% if (searchTerm) { %>
+              <a href="/participants" class="btn btn-outline">View All Participants</a>
+            <% } %>
           </div>
         <% } %>
       </div>
     </section>
 
-    <!-- Stats Summary -->
-    <section class="section section-alt">
-      <div class="container">
-        <div class="stats-row">
-          <div class="stat-mini">
-            <span class="stat-number"><%= participants.length %></span>
-            <span class="stat-label">Total Participants</span>
-          </div>
-          <div class="stat-mini">
-            <span class="stat-number"><%= participants.filter(p => p.status === 'active').length %></span>
-            <span class="stat-label">Active</span>
-          </div>
-          <div class="stat-mini">
-            <span class="stat-number"><%= participants.filter(p => p.status === 'pending').length %></span>
-            <span class="stat-label">Pending</span>
-          </div>
-          <div class="stat-mini">
-            <span class="stat-number"><%= participants.filter(p => p.status === 'alumni').length %></span>
-            <span class="stat-label">Alumni</span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <% if (user.role === 'manager') { %>
+    <script>
+      // Handle delete participant button clicks
+      document.querySelectorAll('.delete-participant-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const participantId = this.getAttribute('data-id');
+          const participantName = this.getAttribute('data-name');
+          
+          if (!confirm(`Are you sure you want to delete ${participantName}? This action cannot be undone.`)) {
+            return;
+          }
 
-    <!-- Participants Table -->
-    <section class="section">
-      <div class="container">
-        <div class="data-table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>School</th>
-                <th>Grade</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% participants.forEach(participant => { %>
-                <tr>
-                  <td>
-                    <div class="user-cell">
-                      <div class="avatar-placeholder"><%= participant.firstName.charAt(0) %><%= participant.lastName.charAt(0) %></div>
-                      <strong><%= participant.firstName %> <%= participant.lastName %></strong>
-                    </div>
-                  </td>
-                  <td><%= participant.email %></td>
-                  <td><%= participant.school %></td>
-                  <td><%= participant.gradeLevel %></td>
-                  <td><span class="status-badge status-<%= participant.status %>"><%= participant.status %></span></td>
-                  <td>
-                    <div class="action-buttons">
-                      <a href="/participants/<%= participant.id %>" class="btn btn-sm btn-outline">View</a>
-                      <% if (user.role === 'manager') { %>
-                        <a href="/participants/<%= participant.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
-                      <% } %>
-                    </div>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+          try {
+            const response = await fetch(`/manage/participants/${participantId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert(result.message);
+              window.location.reload();
+            } else {
+              alert('Error: ' + result.message);
+            }
+          } catch (error) {
+            alert('Error: ' + error.message);
+          }
+        });
+      });
+    </script>
+    <% } %>
 
 <%- include('../partials/footer') %>
-

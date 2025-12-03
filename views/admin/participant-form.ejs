@@ -1,0 +1,139 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1><%= participant && participant.personid ? 'Edit' : 'Add' %> <em>Participant</em></h1>
+        <p class="page-lead">
+          <%= participant && participant.personid ? 'Update participant information.' : 'Add a new participant to the system.' %>
+        </p>
+      </div>
+    </section>
+
+    <!-- Form Section -->
+    <section class="section">
+      <div class="container">
+        <div class="form-card">
+          <% if (error) { %>
+            <div class="alert alert-error" style="margin-bottom: var(--space-xl);">
+              <%= error %>
+            </div>
+          <% } %>
+
+          <form method="POST" action="<%= participant && participant.personid ? '/manage/participants/' + participant.personid : '/manage/participants' %>" class="admin-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstname">First Name *</label>
+                <input 
+                  type="text" 
+                  id="firstname" 
+                  name="firstname" 
+                  value="<%= participant ? (participant.firstname || '') : '' %>"
+                  required
+                  class="form-control"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="lastname">Last Name *</label>
+                <input 
+                  type="text" 
+                  id="lastname" 
+                  name="lastname" 
+                  value="<%= participant ? (participant.lastname || '') : '' %>"
+                  required
+                  class="form-control"
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email</label>
+              <% if (participant && participant.personid) { %>
+                <!-- Email is read-only when editing (foreign key constraint) -->
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  value="<%= participant.email || '' %>"
+                  class="form-control"
+                  readonly
+                  style="background-color: var(--bg-light); cursor: not-allowed;"
+                >
+                <small class="form-help">Email cannot be changed after participant creation (linked to login system).</small>
+              <% } else { %>
+                <!-- Email can be set when creating new participant -->
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  value=""
+                  class="form-control"
+                  placeholder="Must exist in login system (optional)"
+                >
+                <small class="form-help">Email must exist in the login system. Leave empty if participant doesn't have a login account.</small>
+              <% } %>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="city">City</label>
+                <input 
+                  type="text" 
+                  id="city" 
+                  name="city" 
+                  value="<%= participant ? (participant.city || '') : '' %>"
+                  class="form-control"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="state">State</label>
+                <input 
+                  type="text" 
+                  id="state" 
+                  name="state" 
+                  value="<%= participant ? (participant.state || '') : '' %>"
+                  class="form-control"
+                >
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="phone">Phone</label>
+                <input 
+                  type="tel" 
+                  id="phone" 
+                  name="phone" 
+                  value="<%= participant ? (participant.phone || '') : '' %>"
+                  class="form-control"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="birthdate">Birth Date</label>
+                <input 
+                  type="date" 
+                  id="birthdate" 
+                  name="birthdate" 
+                  value="<%= participant ? (participant.birthdate || '') : '' %>"
+                  class="form-control"
+                >
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <a href="/participants" class="btn btn-outline">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <%= participant && participant.personid ? 'Update Participant' : 'Create Participant' %>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

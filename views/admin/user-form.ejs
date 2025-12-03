@@ -44,11 +44,13 @@
                 id="password" 
                 name="password" 
                 class="form-control" 
-                <%= user ? '' : 'required' %>
-                placeholder="<%= user ? 'Leave blank to keep current password' : 'Enter password' %>"
+                <%= user ? '' : '' %>
+                placeholder="<%= user ? 'Leave blank to keep current password' : 'Leave blank to use default: temp123' %>"
               >
               <% if (user) { %>
                 <small class="form-help">Leave blank to keep the current password.</small>
+              <% } else { %>
+                <small class="form-help">Leave blank to use default password: <strong>temp123</strong></small>
               <% } %>
             </div>
 

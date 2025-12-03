@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1><%= survey && survey.surveyid ? 'Edit' : 'Create' %> <em>Survey</em></h1>
+        <p class="page-lead">
+          <%= survey && survey.surveyid ? 'Update survey information.' : 'Create a new survey to gather feedback from participants.' %>
+        </p>
+      </div>
+    </section>
+
+    <!-- Form Section -->
+    <section class="section">
+      <div class="container">
+        <div class="form-card">
+          <% if (error) { %>
+            <div class="alert alert-error" style="margin-bottom: var(--space-xl);">
+              <%= error %>
+            </div>
+          <% } %>
+
+          <form method="POST" action="<%= survey && survey.surveyid ? '/manage/surveys/' + survey.surveyid : '/manage/surveys' %>" class="admin-form">
+            <div class="form-group">
+              <label for="surveytitle">Survey Title *</label>
+              <input 
+                type="text" 
+                id="surveytitle" 
+                name="surveytitle" 
+                value="<%= survey ? (survey.surveytitle || '') : '' %>"
+                required
+                class="form-control"
+                placeholder="e.g., Program Satisfaction Survey"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="surveydescription">Description</label>
+              <textarea 
+                id="surveydescription" 
+                name="surveydescription" 
+                rows="4"
+                class="form-control"
+                placeholder="Describe the purpose of this survey..."
+              ><%= survey ? (survey.surveydescription || '') : '' %></textarea>
+            </div>
+
+            <div class="form-actions">
+              <a href="/surveys" class="btn btn-outline">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <%= survey && survey.surveyid ? 'Update Survey' : 'Create Survey' %>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

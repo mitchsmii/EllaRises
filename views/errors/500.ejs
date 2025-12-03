@@ -1,0 +1,18 @@
+<%- include('../partials/header') %>
+
+    <section class="error-page">
+      <div class="container">
+        <div class="error-content">
+          <h1>500</h1>
+          <h2>Server Error</h2>
+          <p><%= typeof message !== 'undefined' && message ? message : 'Sorry, something went wrong on our end. We\'re working to fix the issue.' %></p>
+          <div class="error-actions">
+            <a href="/" class="btn btn-primary">Go Home</a>
+            <a href="/contact" class="btn btn-outline">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

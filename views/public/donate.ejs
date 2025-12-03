@@ -184,5 +184,33 @@
       </div>
     </section>
 
+    <script>
+      // Handle amount button clicks
+      const amountBtns = document.querySelectorAll('.amount-btn');
+      const customAmountInput = document.getElementById('customAmount');
+
+      amountBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remove active class from all buttons
+          amountBtns.forEach(b => b.classList.remove('active'));
+          // Add active class to clicked button
+          this.classList.add('active');
+          // Clear custom amount input
+          if (customAmountInput) {
+            customAmountInput.value = '';
+          }
+        });
+      });
+
+      // When custom amount is entered, deselect preset buttons
+      if (customAmountInput) {
+        customAmountInput.addEventListener('input', function() {
+          if (this.value) {
+            amountBtns.forEach(b => b.classList.remove('active'));
+          }
+        });
+      }
+    </script>
+
 <%- include('../partials/footer') %>
 

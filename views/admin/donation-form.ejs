@@ -1,0 +1,157 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact">
+      <div class="container">
+        <a href="/donations" class="btn btn-sm btn-outline" style="margin-bottom: var(--space-sm);">← Back to Donations</a>
+        <p class="eyebrow">Admin</p>
+        <h1><%= donation ? 'Edit' : 'Record' %> <em>Donation</em></h1>
+      </div>
+    </section>
+
+    <!-- Form Section -->
+    <section class="section">
+      <div class="container">
+        <div class="form-card">
+          <% if (error) { %>
+            <div class="alert alert-error" style="margin-bottom: var(--space-xl);">
+              <%= error %>
+            </div>
+          <% } %>
+
+          <form method="POST" action="<%= donation ? '/manage/donations/' + donation.donationid : '/manage/donations' %>">
+            
+            <div class="form-group">
+              <label for="personid">Donor (Person ID)</label>
+              <input 
+                type="number" 
+                id="personid" 
+                name="personid" 
+                class="form-control"
+                value="<%= donation ? donation.personid : '' %>"
+                placeholder="Enter person ID (optional for anonymous)"
+              >
+              <small class="form-help">Leave empty for anonymous donations. Enter the person ID from the participants list.</small>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="donationamount">Amount *</label>
+                <div class="input-with-prefix">
+                  <span class="input-prefix">$</span>
+                  <input 
+                    type="number" 
+                    id="donationamount" 
+                    name="donationamount" 
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="<%= donation ? donation.donationamount : '' %>"
+                    placeholder="0.00"
+                    required
+                  >
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="donationdate">Date *</label>
+                <input 
+                  type="date" 
+                  id="donationdate" 
+                  name="donationdate" 
+                  class="form-control"
+                  value="<%= donation ? donation.donationdate : new Date().toISOString().split('T')[0] %>"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <a href="/donations" class="btn btn-outline">Cancel</a>
+              <button type="submit" class="btn btn-primary"><%= donation ? 'Update' : 'Record' %> Donation</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <style>
+      .form-card {
+        background: var(--white);
+        border-radius: var(--radius-xl);
+        padding: var(--space-2xl);
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: var(--shadow-sm);
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-lg);
+      }
+      .form-group {
+        margin-bottom: var(--space-lg);
+      }
+      .form-group label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: var(--space-xs);
+        color: var(--text-primary);
+      }
+      .form-control {
+        width: 100%;
+        padding: var(--space-sm) var(--space-md);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        font-size: 1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: var(--salmon);
+        box-shadow: 0 0 0 3px rgba(var(--salmon-rgb), 0.2);
+      }
+      .form-help {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: var(--space-xs);
+      }
+      .input-with-prefix {
+        display: flex;
+        align-items: stretch;
+      }
+      .input-prefix {
+        display: flex;
+        align-items: center;
+        padding: 0 var(--space-md);
+        background: var(--bg-light);
+        border: 1px solid var(--border-light);
+        border-right: none;
+        border-radius: var(--radius-md) 0 0 var(--radius-md);
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+      .input-with-prefix .form-control {
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      }
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-md);
+        margin-top: var(--space-xl);
+        padding-top: var(--space-xl);
+        border-top: 1px solid var(--border-light);
+      }
+      @media (max-width: 600px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+        .form-card {
+          padding: var(--space-lg);
+        }
+      }
+    </style>
+
+<%- include('../partials/footer') %>
+

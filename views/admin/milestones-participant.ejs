@@ -5,50 +5,31 @@
       <div class="container">
         <p class="eyebrow">Admin</p>
         <h1><%= participant.firstname %> <%= participant.lastname %> - <em>Milestones</em></h1>
-        <p class="page-lead">View and manage completed milestones for this participant.</p>
-      </div>
-    </section>
-
-    <!-- Participant Info -->
-    <section class="section">
-      <div class="container">
-        <div class="participant-info-card">
-          <div class="participant-header">
-            <div class="avatar-placeholder large">
-              <%= (participant.firstname || 'N').charAt(0) %><%= (participant.lastname || 'A').charAt(0) %>
-            </div>
-            <div>
-              <h2><%= participant.firstname %> <%= participant.lastname %></h2>
-              <p class="participant-email"><%= participant.email %></p>
-              <% if (participant.city) { %>
-                <p class="participant-location"><%= participant.city %><% if (participant.state) { %>, <%= participant.state %><% } %></p>
-              <% } %>
-            </div>
-          </div>
-          <div class="participant-actions">
-            <a href="/manage/milestones" class="btn btn-outline">← Back to Search</a>
-            <button class="btn btn-primary" id="addMilestoneBtn">Add New Milestone</button>
-          </div>
-        </div>
-
+        <p class="page-lead">View and manage completed milestones.</p>
         <% if (message) { %>
-          <div class="alert alert-<%= messageType === 'success' ? 'success' : 'error' %>" style="margin-top: var(--space-lg);">
+          <div class="alert alert-<%= messageType === 'success' ? 'success' : 'error' %>" style="margin-top: var(--space-lg); max-width: 600px; margin-left: auto; margin-right: auto;">
             <%= message %>
           </div>
         <% } %>
       </div>
     </section>
 
-    <!-- Completed Milestones -->
+    <!-- Completed Milestones (Centered Focus) -->
     <section class="section section-alt">
       <div class="container">
-        <div class="section-header">
-          <h2>Completed Milestones</h2>
-          <p class="text-muted"><%= completedMilestones.length %> milestone<%= completedMilestones.length !== 1 ? 's' : '' %> completed</p>
+        <div class="milestones-header-centered">
+          <div class="milestones-title-section">
+            <h2>Completed Milestones</h2>
+            <p class="text-muted"><%= completedMilestones.length %> milestone<%= completedMilestones.length !== 1 ? 's' : '' %> completed</p>
+          </div>
+          <div class="milestones-actions">
+            <button onclick="window.history.back()" class="btn btn-outline">← Back</button>
+            <button class="btn btn-primary" id="addMilestoneBtn">+ Add New Milestone</button>
+          </div>
         </div>
 
         <% if (completedMilestones.length > 0) { %>
-          <div class="milestones-grid">
+          <div class="milestones-grid-centered">
             <% completedMilestones.forEach(milestone => { %>
               <div class="milestone-card completed">
                 <div class="milestone-completed-badge">
@@ -75,11 +56,13 @@
     <% if (incompleteMilestones.length > 0) { %>
     <section class="section">
       <div class="container">
-        <div class="section-header">
-          <h2>Incomplete Milestones</h2>
-          <p class="text-muted"><%= incompleteMilestones.length %> milestone<%= incompleteMilestones.length !== 1 ? 's' : '' %> not yet completed</p>
+        <div class="milestones-header-centered">
+          <div class="milestones-title-section">
+            <h2>Incomplete Milestones</h2>
+            <p class="text-muted"><%= incompleteMilestones.length %> milestone<%= incompleteMilestones.length !== 1 ? 's' : '' %> not yet completed</p>
+          </div>
         </div>
-        <div class="milestones-grid">
+        <div class="milestones-grid-centered">
           <% incompleteMilestones.forEach(milestone => { %>
             <div class="milestone-card">
               <div class="milestone-header">

@@ -23,58 +23,23 @@
     <!-- Surveys List -->
     <section class="section">
       <div class="container">
-        <% if (user.role === 'manager') { %>
-          <!-- Manager View: All Surveys -->
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Survey</th>
-                  <th>Status</th>
-                  <th>Responses</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% surveys.forEach(survey => { %>
-                  <tr>
-                    <td>
-                      <strong><%= survey.title %></strong>
-                      <br><small class="text-muted"><%= survey.description %></small>
-                    </td>
-                    <td>
-                      <span class="status-badge status-<%= survey.status %>"><%= survey.status %></span>
-                    </td>
-                    <td><%= survey.responses %> responses</td>
-                    <td><%= new Date(survey.createdAt).toLocaleDateString() %></td>
-                    <td>
-                      <div class="action-buttons">
-                        <a href="/surveys/<%= survey.id %>/responses" class="btn btn-sm btn-outline">View Results</a>
-                        <a href="/surveys/<%= survey.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
-                        <button class="btn btn-sm btn-danger">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-        <% } else { %>
+        <% if (user.role !== 'manager') { %>
           <!-- User View: Available Surveys -->
           <div class="survey-cards">
-            <% surveys.filter(s => s.status === 'active').forEach(survey => { %>
-              <div class="survey-card">
-                <div class="survey-status">
-                  <span class="status-badge status-active">Available</span>
+            <% if (surveys && surveys.length > 0) { %>
+              <% surveys.forEach(survey => { %>
+                <div class="survey-card">
+                  <div class="survey-status">
+                    <span class="status-badge status-active">Available</span>
+                  </div>
+                  <h3><%= survey.title %></h3>
+                  <% if (survey.description) { %>
+                    <p><%= survey.description %></p>
+                  <% } %>
+                  <a href="/surveys/<%= survey.id %>" class="btn btn-primary">Take Survey</a>
                 </div>
-                <h3><%= survey.title %></h3>
-                <p><%= survey.description %></p>
-                <a href="/surveys/<%= survey.id %>" class="btn btn-primary">Take Survey</a>
-              </div>
-            <% }) %>
-            
-            <% if (surveys.filter(s => s.status === 'active').length === 0) { %>
+              <% }) %>
+            <% } else { %>
               <div class="empty-state">
                 <p>No surveys available at this time. Check back later!</p>
               </div>

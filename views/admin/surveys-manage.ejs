@@ -1,0 +1,201 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero compact">
+      <div class="container">
+        <p class="eyebrow">Admin</p>
+        <h1>Manage <em>Surveys</em></h1>
+        <p class="page-lead">Create and manage surveys to gather feedback from participants.</p>
+      </div>
+    </section>
+
+    <!-- Surveys Section -->
+    <section class="section">
+      <div class="container">
+        <!-- Search and Add -->
+        <div class="surveys-controls">
+          <form method="GET" action="/surveys" class="surveys-search-form">
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search surveys..." 
+              value="<%= searchTerm %>"
+              class="search-input"
+            >
+            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+            <% if (searchTerm) { %>
+              <a href="/surveys" class="btn btn-outline btn-sm">Clear</a>
+            <% } %>
+          </form>
+          <a href="/manage/surveys/new" class="btn btn-primary">+ Add New Survey</a>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <% if (message) { %>
+          <div class="alert alert-<%= messageType === 'success' ? 'success' : 'error' %>" style="margin-bottom: var(--space-xl);">
+            <%= message %>
+          </div>
+        <% } %>
+
+        <!-- Surveys Table -->
+        <% if (surveys && surveys.length > 0) { %>
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Survey</th>
+                  <th>Status</th>
+                  <th>Responses</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% surveys.forEach(survey => { %>
+                  <tr>
+                    <td>
+                      <strong><%= survey.title %></strong>
+                      <% if (survey.description) { %>
+                        <br><small class="text-muted"><%= survey.description %></small>
+                      <% } %>
+                    </td>
+                    <td>
+                      <span class="status-badge status-<%= survey.status %>"><%= survey.status %></span>
+                    </td>
+                    <td><%= survey.responses %> response<%= survey.responses !== 1 ? 's' : '' %></td>
+                    <td><%= survey.createdAt ? new Date(survey.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' %></td>
+                    <td>
+                      <div class="action-buttons">
+                        <a href="/surveys/<%= survey.id %>/responses" class="btn btn-sm btn-outline">View Results</a>
+                        <a href="/manage/surveys/<%= survey.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
+                        <button class="btn btn-sm btn-danger delete-survey-btn" data-id="<%= survey.id %>" data-title="<%= survey.title %>">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <% if (totalPages > 1) { %>
+            <div class="pagination">
+              <span class="pagination-info">
+                Showing page <%= currentPageNum %> of <%= totalPages %> (<%= totalSurveys %> total)
+              </span>
+              <div class="pagination-controls">
+                <% if (hasPrevPage) { %>
+                  <a href="/surveys?page=<%= currentPageNum - 1 %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link">Previous</a>
+                <% } else { %>
+                  <span class="pagination-link disabled">Previous</span>
+                <% } %>
+                
+                <% for (let i = Math.max(1, currentPageNum - 2); i <= Math.min(totalPages, currentPageNum + 2); i++) { %>
+                  <% if (i === currentPageNum) { %>
+                    <span class="pagination-link active"><%= i %></span>
+                  <% } else { %>
+                    <a href="/surveys?page=<%= i %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link"><%= i %></a>
+                  <% } %>
+                <% } %>
+                
+                <% if (currentPageNum < totalPages - 2) { %>
+                  <span class="pagination-ellipsis">...</span>
+                  <a href="/surveys?page=<%= totalPages %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link"><%= totalPages %></a>
+                <% } %>
+                
+                <% if (hasNextPage) { %>
+                  <a href="/surveys?page=<%= currentPageNum + 1 %><%= searchTerm ? '&search=' + encodeURIComponent(searchTerm) : '' %>" class="pagination-link">Next</a>
+                <% } else { %>
+                  <span class="pagination-link disabled">Next</span>
+                <% } %>
+              </div>
+            </div>
+          <% } %>
+        <% } else { %>
+          <div class="empty-state">
+            <p><%= searchTerm ? 'No surveys found matching your search.' : 'No surveys found. Create your first survey!' %></p>
+            <% if (!searchTerm) { %>
+              <a href="/manage/surveys/new" class="btn btn-primary">+ Create Survey</a>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <style>
+      .surveys-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-md);
+        margin-bottom: var(--space-xl);
+        flex-wrap: wrap;
+      }
+      .surveys-search-form {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        flex-wrap: wrap;
+      }
+      .surveys-search-form .search-input {
+        width: 250px;
+        padding: var(--space-sm) var(--space-md);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+      }
+      .surveys-search-form .search-input:focus {
+        outline: none;
+        border-color: var(--salmon);
+        box-shadow: 0 0 0 2px rgba(var(--salmon-rgb), 0.2);
+      }
+      @media (max-width: 768px) {
+        .surveys-controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .surveys-search-form {
+          width: 100%;
+        }
+        .surveys-search-form .search-input {
+          flex: 1;
+          width: auto;
+        }
+      }
+    </style>
+
+    <script>
+      // Handle delete survey button clicks
+      document.querySelectorAll('.delete-survey-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const surveyId = this.getAttribute('data-id');
+          const surveyTitle = this.getAttribute('data-title');
+          
+          if (!confirm(`Are you sure you want to delete "${surveyTitle}"? This action cannot be undone.`)) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`/manage/surveys/${surveyId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert(result.message);
+              window.location.reload();
+            } else {
+              alert('Error: ' + result.message);
+            }
+          } catch (error) {
+            alert('Error: ' + error.message);
+          }
+        });
+      });
+    </script>
+
+<%- include('../partials/footer') %>
