@@ -3,6 +3,7 @@
     <!-- Page Hero -->
     <section class="page-hero">
       <div class="container">
+        <a href="/dashboard" class="btn btn-sm btn-outline" style="margin-bottom: var(--space-md);">← Back to Dashboard</a>
         <p class="eyebrow"><%= user.role === 'manager' ? 'Admin' : 'My Progress' %></p>
         <h1>Program <em>Milestones</em></h1>
         <p class="page-lead">Track achievements and progress through the program.</p>
@@ -21,31 +22,130 @@
         <div class="section-header">
           <h2>Your Milestones</h2>
           <p class="text-muted">You have completed <strong><%= userCompletedCount %></strong> milestone<%= userCompletedCount !== 1 ? 's' : '' %>.</p>
+          <% if (primaryTrack) { %>
+            <p class="text-muted" style="margin-top: var(--space-xs);">
+              <strong>Your Primary Track:</strong> <span style="color: var(--coral);"><%= primaryTrack %></span>
+            </p>
+          <% } %>
         </div>
 
-        <% if (userMilestones && userMilestones.length > 0) { %>
+        <% if (Object.keys(milestonesByCategory).length > 0) { %>
+          <% Object.entries(milestonesByCategory).forEach(([category, milestones]) => { %>
+            <div class="milestone-category-section">
+              <h3><%= category %></h3>
+              <% 
+                const categoryCompleted = milestones.filter(m => m.isCompleted).length;
+                const categoryTotal = milestones.length;
+              %>
+              <p class="text-muted" style="margin-bottom: var(--space-lg);">
+                Progress: <strong><%= categoryCompleted %>/<%= categoryTotal %></strong> milestones completed
+              </p>
+              <div class="milestone-grid">
+                <% milestones.forEach(milestone => { %>
+                  <div class="milestone-card <%= milestone.isCompleted ? 'completed' : '' %>">
+                    <% if (milestone.isCompleted) { %>
+                      <div class="milestone-completed-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        Completed
+                      </div>
+                    <% } else if (milestone.isIncomplete) { %>
+                      <div class="milestone-pending-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                        In Progress
+                      </div>
+                    <% } else { %>
+                      <div class="milestone-pending-badge" style="background: var(--gray-light); color: var(--gray-dark);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                        Not Started
+                      </div>
+                    <% } %>
+                    <div class="milestone-header">
+                      <span class="milestone-category">
+                        <%= milestone.milestonelevel %>
+                      </span>
+                    </div>
+                    <h3><%= milestone.milestonetitle || milestone.milestonelevel %></h3>
+                    <% if (milestone.isCompleted && milestone.milestonedate) { %>
+                      <p class="milestone-date">Completed on <%= new Date(milestone.milestonedate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></p>
+                    <% } else if (milestone.isIncomplete) { %>
+                      <p class="milestone-status">In progress - not yet completed</p>
+                    <% } else { %>
+                      <p class="milestone-status">Not yet started</p>
+                    <% } %>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No milestone tracks available yet.</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- All Available Milestones -->
+    <% if (allMilestones && allMilestones.length > 0) { %>
+    <section class="section section-alt">
+      <div class="container">
+        <!-- Search Bar -->
+        <div class="table-controls">
+          <form method="GET" action="/milestones" class="search-form">
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search milestones..." 
+              value="<%= searchTerm %>"
+              class="search-input"
+            >
+            <button type="submit" class="btn btn-primary">Search</button>
+            <% if (searchTerm) { %>
+              <a href="/milestones" class="btn btn-outline">Clear</a>
+            <% } %>
+          </form>
+        </div>
+
+        <div class="section-header">
+          <h2>All Available Milestones</h2>
+          <p class="text-muted">View all milestones in the program and track your progress.</p>
+        </div>
+
+        <% if (allMilestones.length > 0) { %>
           <div class="milestone-grid">
-            <% userMilestones.forEach(milestone => { %>
-              <div class="milestone-card completed">
-                <div class="milestone-completed-badge">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  Completed
-                </div>
+            <% allMilestones.forEach(milestone => { %>
+              <div class="milestone-card <%= milestone.isCompleted ? 'completed' : '' %>">
+                <% if (milestone.isCompleted) { %>
+                  <div class="milestone-completed-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    Completed
+                  </div>
+                <% } else { %>
+                  <div class="milestone-pending-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    Pending
+                  </div>
+                <% } %>
                 <div class="milestone-header">
                   <span class="milestone-category">Achievement</span>
                 </div>
-                <h3><%= milestone.milestonetitle %></h3>
-                <p class="milestone-date">Completed on <%= new Date(milestone.milestonedate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></p>
+                <h3><%= milestone.title %></h3>
+                <% if (milestone.isCompleted && milestone.completedDate) { %>
+                  <p class="milestone-date">Completed on <%= new Date(milestone.completedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></p>
+                <% } else { %>
+                  <p class="milestone-status">Not yet completed</p>
+                <% } %>
               </div>
             <% }) %>
           </div>
         <% } else { %>
           <div class="empty-state">
-            <p>You haven't completed any milestones yet. Keep working toward your goals!</p>
+            <p><%= searchTerm ? 'No milestones found matching your search.' : 'No milestones available.' %></p>
           </div>
         <% } %>
       </div>
     </section>
+    <% } %>
 
     <% } %>
 

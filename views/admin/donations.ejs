@@ -3,6 +3,7 @@
     <!-- Page Hero -->
     <section class="page-hero compact">
       <div class="container">
+        <a href="/dashboard" class="btn btn-sm btn-outline" style="margin-bottom: var(--space-md);">← Back to Dashboard</a>
         <p class="eyebrow">Admin</p>
         <h1>Donation <em>Records</em></h1>
         <p class="page-lead">Track and manage all donations to the organization.</p>
@@ -13,8 +14,8 @@
     <section class="section">
       <div class="container">
         <!-- Search and Add -->
-        <div class="donations-controls">
-          <form method="GET" action="/donations" class="donations-search-form">
+        <div class="table-controls">
+          <form method="GET" action="/donations" class="search-form">
             <input 
               type="text" 
               name="search" 
@@ -22,14 +23,16 @@
               value="<%= searchTerm %>"
               class="search-input"
             >
-            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+            <button type="submit" class="btn btn-primary">Search</button>
             <% if (searchTerm) { %>
-              <a href="/donations" class="btn btn-outline btn-sm">Clear</a>
+              <a href="/donations" class="btn btn-outline">Clear</a>
             <% } %>
           </form>
-          <% if (user && user.role === 'manager') { %>
-            <a href="/manage/donations/new" class="btn btn-primary">+ Record Donation</a>
-          <% } %>
+          <div class="table-controls-right">
+            <% if (user && user.role === 'manager') { %>
+              <a href="/manage/donations/new" class="btn btn-primary">+ Record Donation</a>
+            <% } %>
+          </div>
         </div>
 
         <!-- Stats Summary -->
@@ -137,31 +140,10 @@
     </section>
 
     <style>
-      .donations-controls {
+      .table-controls-right {
         display: flex;
-        justify-content: space-between;
         align-items: center;
         gap: var(--space-md);
-        margin-bottom: var(--space-xl);
-        flex-wrap: wrap;
-      }
-      .donations-search-form {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        flex-wrap: wrap;
-      }
-      .donations-search-form .search-input {
-        width: 280px;
-        padding: var(--space-sm) var(--space-md);
-        border: 1px solid var(--border-light);
-        border-radius: var(--radius-md);
-        font-size: 0.9rem;
-      }
-      .donations-search-form .search-input:focus {
-        outline: none;
-        border-color: var(--salmon);
-        box-shadow: 0 0 0 2px rgba(var(--salmon-rgb), 0.2);
       }
       .donations-stats {
         display: flex;
@@ -195,17 +177,6 @@
         color: var(--success);
       }
       @media (max-width: 768px) {
-        .donations-controls {
-          flex-direction: column;
-          align-items: stretch;
-        }
-        .donations-search-form {
-          width: 100%;
-        }
-        .donations-search-form .search-input {
-          flex: 1;
-          width: auto;
-        }
         .donations-stats {
           justify-content: center;
         }

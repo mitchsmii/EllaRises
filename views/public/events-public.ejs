@@ -18,6 +18,23 @@
     <!-- Upcoming Events -->
     <section class="section">
       <div class="container">
+        <!-- Search Bar -->
+        <div class="table-controls">
+          <form method="GET" action="/events" class="search-form">
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search by name, description, type, or location..." 
+              value="<%= searchTerm %>"
+              class="search-input"
+            >
+            <button type="submit" class="btn btn-primary">Search</button>
+            <% if (searchTerm) { %>
+              <a href="/events" class="btn btn-outline">Clear</a>
+            <% } %>
+          </form>
+        </div>
+
         <div class="section-header">
           <h2>Upcoming Events</h2>
           <p class="text-muted">Join us at these upcoming events and workshops.</p>

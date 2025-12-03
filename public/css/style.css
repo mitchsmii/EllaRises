@@ -3274,6 +3274,22 @@ body {
 .milestone-actions {
   display: flex;
   gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
+}
+
+.milestone-category-section {
+  margin-bottom: var(--space-3xl);
+}
+
+.milestone-category-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-lg);
+  color: var(--coral);
+  border-bottom: 2px solid var(--coral);
+  padding-bottom: var(--space-sm);
+  font-weight: 600;
 }
 
 /* ---------- Survey Cards ---------- */
@@ -3595,10 +3611,37 @@ body {
   height: 14px;
 }
 
+.milestone-pending-badge {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.milestone-pending-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
 .milestone-date {
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-top: var(--space-sm);
+}
+
+.milestone-status {
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  margin-top: var(--space-sm);
+  font-style: italic;
 }
 
 .empty-state {
@@ -3660,6 +3703,13 @@ body {
   outline: none;
   border-color: var(--salmon);
   box-shadow: 0 0 0 3px rgba(244, 165, 160, 0.2);
+}
+
+.table-controls-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
 }
 
 .table-stats {
