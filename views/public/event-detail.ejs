@@ -64,6 +64,7 @@
       <div class="modal-actions">
         <button class="btn btn-primary" data-next-step="step-rider-address">Request a Carpool Spot</button>
         <button class="btn btn-secondary" data-next-step="step-bus-address">Get Bus Directions</button>
+        <button class="btn btn-outline" data-next-step="step1">← Back</button>
       </div>
     </div>
     
@@ -77,6 +78,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-primary" data-rsvp-option="carpool-request">Submit Carpool Request</button>
+        <button class="btn btn-outline" data-next-step="step-need-ride">← Back</button>
       </div>
     </div>
     
@@ -90,6 +92,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-primary" data-rsvp-option="bus-directions">Show Directions & RSVP</button>
+        <button class="btn btn-outline" data-next-step="step-need-ride">← Back</button>
       </div>
     </div>
 
@@ -100,6 +103,7 @@
       <div class="modal-actions">
         <button class="btn btn-primary" data-next-step="step-can-drive">Yes, I can drive</button>
         <button class="btn btn-outline" data-rsvp-option="no-drive">No, sorry I can't</button>
+        <button class="btn btn-outline" data-next-step="step1">← Back</button>
       </div>
     </div>
 
@@ -121,6 +125,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-primary" data-rsvp-option="driver-offer">Submit Driver Offer</button>
+        <button class="btn btn-outline" data-next-step="step-have-ride">← Back</button>
       </div>
     </div>
 
@@ -187,31 +192,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showModal() {
-      modal.style.display = 'flex';
+      modal.classList.add('show');
       goToStep('step1');
+      // Reset all form inputs
       const inputs = modal.querySelectorAll('input[type="text"], input[type="number"]');
       inputs.forEach(input => {
-        input.value = input.defaultValue || '';
-        if (input.type === 'number') input.value = input.getAttribute('value');
+        input.value = '';
+        if (input.type === 'number' && input.hasAttribute('value')) {
+          input.value = input.getAttribute('value');
+        }
       });
     }
 
     function hideModal() {
-      modal.style.display = 'none';
+      modal.classList.remove('show');
     }
 
     rsvpBtn.addEventListener('click', showModal);
     closeBtn.addEventListener('click', hideModal);
     closeConfirmBtn.addEventListener('click', hideModal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
-
+    // Close modal when clicking overlay
     modal.addEventListener('click', (e) => {
-      const target = e.target;
+      if (e.target === modal) {
+        hideModal();
+      }
+    });
+
+    // Handle button clicks inside modal
+    modal.addEventListener('click', (e) => {
+      const target = e.target.closest('button');
+      if (!target) return;
+
+      // Prevent event bubbling
+      e.stopPropagation();
+
       if (target.matches('[data-next-step]')) {
+        e.preventDefault();
         goToStep(target.getAttribute('data-next-step'));
+        return;
       }
 
       if (target.matches('[data-rsvp-option]')) {
+        e.preventDefault();
         const option = target.getAttribute('data-rsvp-option');
         let rsvpData = { option };
 
@@ -261,6 +283,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+
+    // Initialize: hide modal and show only first step
+    hideModal();
+    goToStep('step1');
   }
 });
 </script>

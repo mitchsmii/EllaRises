@@ -6,6 +6,25 @@ const multer = require('multer');
 const fs = require('fs');
 const session = require('express-session');
 
+// ============================================
+// IN-MEMORY CARPOOLING STORAGE
+// ============================================
+// Store carpooling data in memory (not in database)
+// Structure: { eventDetailId: { drivers: [], riders: [], matches: [] } }
+const carpoolingData = {};
+
+// Helper function to get or initialize carpooling data for an event
+function getCarpoolingData(eventDetailId) {
+  if (!carpoolingData[eventDetailId]) {
+    carpoolingData[eventDetailId] = {
+      drivers: [],
+      riders: [],
+      matches: []
+    };
+  }
+  return carpoolingData[eventDetailId];
+}
+
 // Database connection (uncomment when ready to use)
 // const { db, testConnection } = require('./db');
 
@@ -662,13 +681,90 @@ app.post('/events/:detailId/rsvp', requireLogin, async (req, res) => {
     `);
     const nextRegistrationId = maxReg.rows[0].maxid ? parseInt(maxReg.rows[0].maxid) + 1 : 1;
 
-    // Create registration
+    // Create registration in database
     // Using 'active' instead of 'registered' to fit within character varying(9) constraint
     await knex.raw(`
       INSERT INTO registration (registrationid, personid, eventdetailid, registrationstatus, registrationattendedflag, registrationcreateddate)
       VALUES (?, ?, ?, ?, ?, ?)
     `, [nextRegistrationId, person.personid, eventDetailId, 'active', 0, new Date()]);
 
+    // Handle carpooling options (stored in memory, not database)
+    const { option, address, radius, seatCount } = req.body;
+    const carpoolData = getCarpoolingData(eventDetailId);
+    
+    if (option === 'carpool-request' && address) {
+      // Add rider request
+      const existingRiderIndex = carpoolData.riders.findIndex(r => r.userEmail === person.email);
+      if (existingRiderIndex >= 0) {
+        carpoolData.riders[existingRiderIndex] = {
+          userEmail: person.email,
+          userName: `${person.firstname} ${person.lastname}`,
+          phone: person.phone || '',
+          address: address,
+          eventDetailId: eventDetailId
+        };
+      } else {
+        carpoolData.riders.push({
+          userEmail: person.email,
+          userName: `${person.firstname} ${person.lastname}`,
+          phone: person.phone || '',
+          address: address,
+          eventDetailId: eventDetailId
+        });
+      }
+      return res.json({
+        success: true,
+        message: 'Successfully RSVP\'d and submitted carpool request! We\'ll match you with a driver soon.'
+      });
+    } else if (option === 'driver-offer' && address && radius && seatCount) {
+      // Add driver offer
+      const existingDriverIndex = carpoolData.drivers.findIndex(d => d.userEmail === person.email);
+      if (existingDriverIndex >= 0) {
+        carpoolData.drivers[existingDriverIndex] = {
+          userEmail: person.email,
+          userName: `${person.firstname} ${person.lastname}`,
+          phone: person.phone || '',
+          address: address,
+          radius: parseFloat(radius),
+          seatCount: parseInt(seatCount),
+          eventDetailId: eventDetailId
+        };
+      } else {
+        carpoolData.drivers.push({
+          userEmail: person.email,
+          userName: `${person.firstname} ${person.lastname}`,
+          phone: person.phone || '',
+          address: address,
+          radius: parseFloat(radius),
+          seatCount: parseInt(seatCount),
+          eventDetailId: eventDetailId
+        });
+      }
+      return res.json({
+        success: true,
+        message: 'Successfully RSVP\'d and registered as a driver! Thank you for helping others get to the event.'
+      });
+    } else if (option === 'bus' || option === 'bus-directions') {
+      // Just RSVP, no carpooling data needed
+      return res.json({
+        success: true,
+        message: 'Successfully RSVP\'d! We hope you have a safe trip using public transit.'
+      });
+    } else if (option === 'virtual') {
+      // Virtual event RSVP
+      return res.json({
+        success: true,
+        message: 'Successfully RSVP\'d to the virtual event! We\'ll send you the link closer to the event date.'
+      });
+    } else if (option === 'no-drive') {
+      // User has a ride but can't drive others - just RSVP
+      return res.json({
+        success: true,
+        message: 'Successfully RSVP\'d to the event!'
+      });
+    }
+
+    // Regular RSVP (no carpooling option)
     res.json({
       success: true,
       message: 'Successfully RSVP\'d to the event!'
@@ -722,6 +818,15 @@ app.delete('/events/:detailId/rsvp', requireLogin, async (req, res) => {
       SET registrationstatus = 'cancelled'
       WHERE registrationid = ?
     `, [registration.rows[0].registrationid]);
+
+    // Remove from carpooling data if they were a driver or rider
+    const carpoolData = getCarpoolingData(eventDetailId);
+    carpoolData.drivers = carpoolData.drivers.filter(d => d.userEmail !== person.email);
+    carpoolData.riders = carpoolData.riders.filter(r => r.userEmail !== person.email);
+    // Remove any matches involving this user
+    carpoolData.matches = carpoolData.matches.filter(m => 
+      m.driverEmail !== person.email && m.riderEmail !== person.email
+    );
 
     res.json({
       success: true,
@@ -1833,6 +1938,15 @@ app.delete('/manage/events/:id', requireManager, async (req, res) => {
       .where('eventid', eventId)
       .del();
 
+    // Also clean up carpooling data for this event
+    const eventDetails = await knex('event_details')
+      .where('eventid', eventId)
+      .select('eventdetailid');
+    
+    eventDetails.forEach(detail => {
+      delete carpoolingData[detail.eventdetailid];
+    });
+
     res.json({
       success: true,
       message: 'Event deleted successfully.'
@@ -1843,6 +1957,167 @@ app.delete('/manage/events/:id', requireManager, async (req, res) => {
       success: false,
       message: 'Error deleting event: ' + error.message
     });
+  }
+});
+
+// GET /events/:detailId - Show event detail page
+app.get('/events/:detailId', async (req, res) => {
+  try {
+    const eventDetailId = parseInt(req.params.detailId);
+    
+    const eventData = await knex('events')
+      .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
+      .where('event_details.eventdetailid', eventDetailId)
+      .select(
+        'events.eventid',
+        'events.eventname as title',
+        'events.eventtype as eventType',
+        'events.eventdescription as description',
+        'event_details.eventdatetimestart as eventDate',
+        'event_details.eventlocation as location',
+        'event_details.eventdetailid as detailId'
+      )
+      .first();
+
+    if (!eventData) {
+      return res.status(404).render('errors/404', {
+        currentPage: 'events',
+        pageTitle: 'Event Not Found'
+      });
+    }
+
+    // Format event for view
+    const event = {
+      id: eventData.detailId, // Use detailId for RSVP route
+      title: eventData.title,
+      eventType: eventData.eventType,
+      description: eventData.description,
+      eventDate: eventData.eventDate,
+      location: eventData.location
+    };
+
+    res.render('public/event-detail', {
+      currentPage: 'events',
+      pageTitle: event.title,
+      event: event,
+      user: req.session.user || null
+    });
+  } catch (error) {
+    console.error('Error fetching event detail:', error);
+    res.status(500).render('errors/500', {
+      currentPage: 'events',
+      pageTitle: 'Error',
+      message: 'Failed to load event details.'
+    });
+  }
+});
+
+// GET /manage/events/:detailId/transportation - Manage transportation for an event (manager only)
+app.get('/manage/events/:detailId/transportation', requireManager, async (req, res) => {
+  try {
+    const eventDetailId = parseInt(req.params.detailId);
+    
+    // Get event information
+    const eventData = await knex('events')
+      .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
+      .where('event_details.eventdetailid', eventDetailId)
+      .select(
+        'events.eventid',
+        'events.eventname as title',
+        'events.eventtype as eventType',
+        'events.eventdescription as description',
+        'event_details.eventdatetimestart as eventDate',
+        'event_details.eventlocation as location',
+        'event_details.eventdetailid as detailId'
+      )
+      .first();
+
+    if (!eventData) {
+      return res.status(404).render('errors/404', {
+        currentPage: 'events',
+        pageTitle: 'Event Not Found'
+      });
+    }
+
+    // Get carpooling data from memory
+    const carpoolData = getCarpoolingData(eventDetailId);
+
+    res.render('admin/manage-transportation', {
+      currentPage: 'events',
+      pageTitle: 'Manage Transportation',
+      event: {
+        id: eventData.detailId,
+        title: eventData.title
+      },
+      drivers: carpoolData.drivers,
+      riders: carpoolData.riders,
+      matches: carpoolData.matches,
+      matchMessage: req.query.matchMessage || null,
+      matchSuccess: req.query.matchSuccess === 'true'
+    });
+  } catch (error) {
+    console.error('Error fetching transportation data:', error);
+    res.status(500).render('errors/500', {
+      currentPage: 'events',
+      pageTitle: 'Error',
+      message: 'Failed to load transportation data.'
+    });
+  }
+});
+
+// POST /manage/events/:detailId/match - Create a match between driver and rider (manager only)
+app.post('/manage/events/:detailId/match', requireManager, async (req, res) => {
+  try {
+    const eventDetailId = parseInt(req.params.detailId);
+    const { driverEmail, riderEmail } = req.body;
+
+    if (!driverEmail || !riderEmail) {
+      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent('Please select both a driver and a rider.')}&matchSuccess=false`);
+    }
+
+    const carpoolData = getCarpoolingData(eventDetailId);
+
+    // Find driver and rider
+    const driver = carpoolData.drivers.find(d => d.userEmail === driverEmail);
+    const rider = carpoolData.riders.find(r => r.userEmail === riderEmail);
+
+    if (!driver) {
+      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent('Driver not found.')}&matchSuccess=false`);
+    }
+
+    if (!rider) {
+      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent('Rider not found.')}&matchSuccess=false`);
+    }
+
+    // Check if driver has available seats
+    const existingMatchesForDriver = carpoolData.matches.filter(m => m.driverEmail === driverEmail).length;
+    if (existingMatchesForDriver >= driver.seatCount) {
+      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent(`Driver ${driver.userName} has already been matched with all available seats (${driver.seatCount}).`)}&matchSuccess=false`);
+    }
+
+    // Check if rider is already matched
+    const existingMatchForRider = carpoolData.matches.find(m => m.riderEmail === riderEmail);
+    if (existingMatchForRider) {
+      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent(`Rider ${rider.userName} is already matched with a driver.`)}&matchSuccess=false`);
+    }
+
+    // Create match
+    carpoolData.matches.push({
+      driverEmail: driverEmail,
+      driverName: driver.userName,
+      driverPhone: driver.phone,
+      driverAddress: driver.address,
+      riderEmail: riderEmail,
+      riderName: rider.userName,
+      riderPhone: rider.phone,
+      riderAddress: rider.address,
+      matchedAt: new Date()
+    });
+
+    res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent(`Successfully matched ${driver.userName} with ${rider.userName}!`)}&matchSuccess=true`);
+  } catch (error) {
+    console.error('Error creating match:', error);
+    res.redirect(`/manage/events/${req.params.detailId}/transportation?matchMessage=${encodeURIComponent('An error occurred while creating the match.')}&matchSuccess=false`);
   }
 });
 
