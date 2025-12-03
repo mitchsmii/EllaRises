@@ -65,6 +65,8 @@ const knex = require("knex")({
 });
 
 
+const sampleRsvps = [];
+
 // ============================================
 // SAMPLE DATA (will come from database later)
 // ============================================
@@ -324,6 +326,7 @@ app.post('/login', async (req, res) => {
       email: loginUser.email,
       firstName: person ? person.firstname : (loginUser.email === 'admin' ? 'Admin' : 'User'),
       lastName: person ? person.lastname : '',
+      phone: person ? person.phone : null, // Add phone to session
       role: userRole
     };
     
@@ -458,6 +461,40 @@ app.get('/events', async (req, res) => {
   }
 });
 
+app.get('/events/:id', async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    const event = await knex('events')
+      .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
+      .select(
+        'events.eventid as id',
+        'events.eventname as title',
+        'events.eventtype as eventType',
+        'events.eventdescription as description',
+        'events.eventrecurrence as recurrence',
+        'event_details.eventdatetimestart as eventDate',
+        'event_details.eventregistrationdeadline as registrationDeadline',
+        'event_details.eventcapacity as capacity',
+        'event_details.eventlocation as location'
+      )
+      .where('events.eventid', eventId)
+      .first(); // Use .first() because we expect only one result
+
+    if (!event) {
+      return res.status(404).render('errors/404', { currentPage: '404', pageTitle: 'Event Not Found' });
+    }
+
+    res.render('public/event-detail', {
+      currentPage: 'events',
+      pageTitle: event.title,
+      event
+    });
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    res.status(500).render('errors/404', { currentPage: '404', pageTitle: 'Error' }); // Or a 500 error page
+  }
+});
+
 app.get('/get-involved', (req, res) => {
   res.render('public/get-involved', { currentPage: 'get-involved', pageTitle: 'Get Involved', pageDescription: 'Discover ways to volunteer, mentor, donate, and partner with Ella Rises.' });
 });
@@ -477,6 +514,52 @@ app.get('/resources', (req, res) => {
 app.post('/contact', (req, res) => {
   res.redirect('/contact?success=true');
 });
+
+app.post('/events/:id/rsvp', requireLogin, (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const userEmail = req.session.user.email;
+  const { option, address, radius, seatCount } = req.body;
+
+  // Basic validation
+  if (!option) {
+    return res.status(400).json({ success: false, message: 'An RSVP option is required.' });
+  }
+
+  const rsvp = {
+    eventId,
+    userEmail,
+    option,
+    address: address || null,
+    radius: radius || null,
+    seatCount: seatCount || null,
+    timestamp: new Date()
+  };
+
+  sampleRsvps.push(rsvp);
+  console.log('New RSVP:', rsvp);
+
+  let message = "Your RSVP has been confirmed. Thank you!";
+  switch(option) {
+    case 'virtual':
+      message = "Thank you for RSVPing! The link for this virtual event will be sent to your email closer to the event date.";
+      break;
+    case 'driver-offer':
+      message = `Thank you for offering to drive! We've noted you have ${seatCount} seat(s) available. We'll be in touch if we find a match.`;
+      break;
+    case 'carpool-request':
+      message = "We've added you to the carpool request list. We will notify you via email if a spot becomes available.";
+      break;
+    case 'no-drive':
+      message = "Got it. Your RSVP is confirmed. See you at the event!";
+      break;
+    case 'bus':
+      message = "Your RSVP is confirmed. We've opened a new tab with Google Maps for your convenience.";
+      break;
+  }
+
+  res.json({ success: true, message });
+});
+
 
 
 
@@ -597,12 +680,46 @@ app.get('/surveys', requireLogin, (req, res) => {
 // ADMIN PAGES (views/admin/) - requires manager
 // ============================================
 
-app.get('/manage/events', requireManager, (req, res) => {
-  res.render('admin/events-manage', { 
-    currentPage: 'events', 
-    pageTitle: 'Manage Events', 
-    events: sampleEvents 
-  });
+app.get('/manage/events', requireManager, async (req, res) => {
+  try {
+    const events = await knex('events')
+      .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
+      .select(
+        'events.eventid as id',
+        'events.eventname as title',
+        'events.eventtype as eventType',
+        'events.eventdescription as description',
+        'events.eventrecurrence as recurrence',
+        'event_details.eventdatetimestart as eventDate',
+        'event_details.eventregistrationdeadline as registrationDeadline',
+        'event_details.eventcapacity as capacity',
+        'event_details.eventlocation as location'
+      )
+      .orderBy('event_details.eventdatetimestart', 'desc');
+
+    // The view expects 'registered' and 'eventTime'. We'll add them here.
+    const eventsWithRegistration = events.map(event => {
+        const registeredCount = sampleRsvps.filter(r => r.eventId === event.id).length;
+        return {
+            ...event,
+            registered: registeredCount,
+            eventTime: event.eventDate ? new Date(event.eventDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'
+        };
+    });
+
+    res.render('admin/events-manage', {
+      currentPage: 'events',
+      pageTitle: 'Manage Events',
+      events: eventsWithRegistration
+    });
+  } catch (error) {
+    console.error('Error fetching events for admin:', error);
+    res.render('admin/events-manage', {
+      currentPage: 'events',
+      pageTitle: 'Manage Events',
+      events: [] // Render with empty array on error
+    });
+  }
 });
 
 app.get('/manage/events/new', requireManager, (req, res) => {
@@ -621,6 +738,96 @@ app.get('/manage/events/:id/edit', requireManager, (req, res) => {
     pageTitle: 'Edit Event', 
     event 
   });
+});
+
+app.get('/manage/events/:id/transportation', requireManager, async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    
+    const event = await knex('events')
+      .where('eventid', eventId)
+      .select('eventid as id', 'eventname as title')
+      .first();
+
+    if (!event) {
+      return res.status(404).render('errors/404', { pageTitle: 'Event Not Found' });
+    }
+
+    const eventRsvps = sampleRsvps.filter(r => r.eventId === eventId);
+    
+    // Filter out riders who are already matched
+    const riders = eventRsvps.filter(r => r.option === 'carpool-request' && !r.matchedWithDriver);
+    
+    // Find drivers with available seats
+    const drivers = eventRsvps.filter(r => {
+      if (r.option !== 'driver-offer') return false;
+      const matchedSeats = r.matchedRiders ? r.matchedRiders.length : 0;
+      return matchedSeats < r.seatCount;
+    });
+
+    res.render('admin/manage-transportation', {
+      currentPage: 'events',
+      pageTitle: 'Manage Transportation',
+      event,
+      drivers,
+      riders,
+      // Pass match messages from query params to the view
+      matchMessage: req.query.matchMessage,
+      matchSuccess: req.query.matchSuccess === 'true'
+    });
+
+  } catch (error) {
+    console.error('Error fetching transportation data:', error);
+    res.status(500).render('errors/404', { pageTitle: 'Error' });
+  }
+});
+
+app.post('/manage/events/:id/match', requireManager, async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { driverEmail, riderEmail } = req.body;
+  const redirectUrl = `/manage/events/${eventId}/transportation`;
+
+  try {
+    // Find the full user objects from the DATABASE
+    const driverUser = await knex('people').where('email', driverEmail).first();
+    const riderUser = await knex('people').where('email', riderEmail).first();
+    
+    // Find the specific RSVP records from the in-memory array
+    const driverRsvp = sampleRsvps.find(r => r.eventId === eventId && r.userEmail === driverEmail && r.option === 'driver-offer');
+    const riderRsvp = sampleRsvps.find(r => r.eventId === eventId && r.userEmail === riderEmail && r.option === 'carpool-request');
+
+    if (!driverUser || !riderUser || !driverRsvp || !riderRsvp) {
+      console.error("Match lookup failed:", { driverUser, riderUser, driverRsvp, riderRsvp });
+      return res.redirect(`${redirectUrl}?matchSuccess=false&matchMessage=Error: Could not find driver or rider details.`);
+    }
+
+    const driverPhone = driverUser.phone || 'Not Available';
+    const riderPhone = riderUser.phone || 'Not Available';
+
+    // Mark as matched
+    riderRsvp.matchedWithDriver = driverEmail;
+    if (!driverRsvp.matchedRiders) {
+      driverRsvp.matchedRiders = [];
+    }
+    driverRsvp.matchedRiders.push(riderEmail);
+
+    // --- SIMULATE SENDING TEXT MESSAGES ---
+    console.log("\n--- SIMULATING TEXT MESSAGE API ---");
+    console.log(`To: ${riderPhone} (Rider)`);
+    console.log(`Body: A carpool driver was found for your event! Your driver, ${driverUser.firstname}, will coordinate with you. Their phone number is ${driverPhone}.`);
+    console.log("------------------------------------");
+    console.log(`To: ${driverPhone} (Driver)`);
+    console.log(`Body: You have been matched with a rider! Please contact ${riderUser.firstname} ${riderUser.lastname} at ${riderPhone} to coordinate the ride.`);
+    console.log("--- END SIMULATION ---\n");
+    
+    const message = `Successfully matched ${driverUser.firstname} with ${riderUser.firstname}. Notifications have been sent.`;
+    res.redirect(`${redirectUrl}?matchSuccess=true&matchMessage=${encodeURIComponent(message)}`);
+
+  } catch (error) {
+    console.error("Matching Error:", error);
+    const message = "An unexpected error occurred during the matching process.";
+    res.redirect(`${redirectUrl}?matchSuccess=false&matchMessage=${encodeURIComponent(message)}`);
+  }
 });
 
 app.get('/donations', requireManager, (req, res) => {

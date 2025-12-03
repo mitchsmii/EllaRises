@@ -2000,6 +2000,94 @@ p:last-child {
   margin-bottom: var(--space-xs);
 }
 
+/* Styles for the RSVP Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.modal-container h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.modal-container p {
+  margin-bottom: 1.5rem;
+}
+
+.modal-step {
+  display: none;
+}
+
+.modal-step.active {
+  display: block;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modal-actions .btn {
+  width: 100%;
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--gray-light);
+  transition: color var(--transition-fast);
+}
+
+.modal-close:hover {
+  color: var(--charcoal);
+}
+
+.modal-container .form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.modal-container .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.modal-container .form-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+
 .info-item p {
   font-size: 0.9rem;
   color: var(--text-secondary);

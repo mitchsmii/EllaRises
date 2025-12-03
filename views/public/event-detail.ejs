@@ -1,0 +1,269 @@
+<%- include('../partials/header') %>
+
+<% 
+  const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+  // Define isVirtual once, safely. Coerce to a true boolean.
+  const isVirtual = !!(event.location && (event.location.toLowerCase().includes('virtual') || event.location.toLowerCase().includes('zoom')));
+%>
+
+<!-- Page Hero -->
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow"><%= event.eventType || 'Event' %></p>
+    <h1><%= event.title %></h1>
+    <div class="event-meta">
+      <% if (eventDate) { %>
+        <span>📅 <%= eventDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+        <span>🕐 <%= eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %></span>
+      <% } %>
+      <% if (event.location) { %><span>📍 <%= event.location %></span><% } %>
+    </div>
+  </div>
+</section>
+
+<!-- Event Content -->
+<section class="section">
+  <div class="container" style="max-width: 800px;">
+    <p class="page-lead"><%= event.description %></p>
+    
+    <div class="event-actions" style="margin-top: 2rem; text-align: center;">
+      <% if (user) { %>
+        <% if (isVirtual) { %>
+          <button id="rsvp-virtual-btn" class="btn btn-primary btn-lg">RSVP Now</button>
+          <div id="virtual-rsvp-confirmation" style="display: none; margin-top: 1rem; color: green;"></div>
+        <% } else { %>
+          <button id="rsvp-btn" class="btn btn-primary btn-lg">RSVP Now</button>
+        <% } %>
+      <% } else { %>
+        <a href="/login?redirect=/events/<%= event.id %>" class="btn btn-primary btn-lg">Login to RSVP</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<% if (user && !isVirtual) { %>
+<!-- RSVP Modal for Physical Events -->
+<div class="modal-overlay" id="rsvp-modal">
+  <div class="modal-container">
+    <button class="modal-close" id="modal-close-btn">&times;</button>
+
+    <!-- Step 1: Initial Question -->
+    <div class="modal-step active" id="step1">
+      <h3>How are you getting to the event?</h3>
+      <p>This helps us coordinate and make sure everyone can get here safely.</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-next-step="step-need-ride">I need help finding a ride</button>
+        <button class="btn btn-outline" data-next-step="step-have-ride">I already have a ride</button>
+      </div>
+    </div>
+
+    <!-- Step 2a: Needs a Ride Options -->
+    <div class="modal-step" id="step-need-ride">
+      <h3>How can we help?</h3>
+      <p>Select an option below. We'll do our best to help you get to the event.</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-next-step="step-rider-address">Request a Carpool Spot</button>
+        <button class="btn btn-secondary" data-next-step="step-bus-address">Get Bus Directions</button>
+      </div>
+    </div>
+    
+    <!-- Step 3a-1: Rider Address -->
+    <div class="modal-step" id="step-rider-address">
+      <h3>Enter Your Pickup Address</h3>
+      <p class="privacy-warning">For coordination, this address will be shared with your matched driver. Your phone number will also be shared.</p>
+      <div class="form-group">
+        <label for="rider-address">Your full address</label>
+        <input type="text" id="rider-address" placeholder="123 Main St, Anytown, USA" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-rsvp-option="carpool-request">Submit Carpool Request</button>
+      </div>
+    </div>
+    
+    <!-- Step 3a-2: Bus Address -->
+    <div class="modal-step" id="step-bus-address">
+      <h3>Get Public Transit Directions</h3>
+      <p>Enter your starting address below. We'll open Google Maps with transit directions for you.</p>
+      <div class="form-group">
+        <label for="bus-address">Your starting address</label>
+        <input type="text" id="bus-address" placeholder="123 Main St, Anytown, USA" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-rsvp-option="bus-directions">Show Directions & RSVP</button>
+      </div>
+    </div>
+
+    <!-- Step 2b: Has a Ride -->
+    <div class="modal-step" id="step-have-ride">
+      <h3>That's great!</h3>
+      <p>Some of our members need help getting to events. Would you be able to help by offering a ride to others?</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-next-step="step-can-drive">Yes, I can drive</button>
+        <button class="btn btn-outline" data-rsvp-option="no-drive">No, sorry I can't</button>
+      </div>
+    </div>
+
+    <!-- Step 3b: Driver Details -->
+    <div class="modal-step" id="step-can-drive">
+      <h3>You're amazing!</h3>
+      <p class="privacy-warning">Your address is used for matching and will be kept private. Your phone number will be shared with your matched rider for coordination.</p>
+      <div class="form-group">
+        <label for="driver-address">Your starting address</label>
+        <input type="text" id="driver-address" placeholder="123 Main St, Anytown, USA" required>
+      </div>
+      <div class="form-group">
+        <label for="drive-radius">Willing to travel (miles from your address)</label>
+        <input type="number" id="drive-radius" min="1" max="50" value="5" required>
+      </div>
+      <div class="form-group">
+        <label for="seat-count">Number of available seats</label>
+        <input type="number" id="seat-count" min="1" max="10" value="1" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-rsvp-option="driver-offer">Submit Driver Offer</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div class="modal-step" id="step-confirmation">
+      <h3>Thank You!</h3>
+      <p id="confirmation-message"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="modal-close-confirm-btn">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<% if (user) { %>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Use the isVirtual variable defined reliably in the EJS scope
+  const isVirtual = <%= isVirtual %>;
+
+  async function submitRsvp(data) {
+    try {
+      const response = await fetch('/events/<%= event.id %>/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Network response was not ok');
+      return await response.json();
+    } catch (error) {
+      console.error('RSVP Submission Error:', error);
+      return { message: 'Sorry, there was an error submitting your RSVP. Please try again later.' };
+    }
+  }
+
+  if (isVirtual) {
+    const rsvpVirtualBtn = document.getElementById('rsvp-virtual-btn');
+    const confirmationDiv = document.getElementById('virtual-rsvp-confirmation');
+    if (rsvpVirtualBtn) {
+      rsvpVirtualBtn.addEventListener('click', async () => {
+        const result = await submitRsvp({ option: 'virtual' });
+        rsvpVirtualBtn.style.display = 'none';
+        confirmationDiv.textContent = result.message;
+        confirmationDiv.style.display = 'block';
+      });
+    }
+  } else {
+    // All the modal logic for physical events
+    const rsvpBtn = document.getElementById('rsvp-btn');
+    const modal = document.getElementById('rsvp-modal');
+    if (!rsvpBtn || !modal) return;
+
+    const closeBtn = document.getElementById('modal-close-btn');
+    const closeConfirmBtn = document.getElementById('modal-close-confirm-btn');
+    const steps = modal.querySelectorAll('.modal-step');
+    const confirmationMessage = document.getElementById('confirmation-message');
+    const eventLocation = `<%= event.location ? event.location.replace(/'/g, "\\'") : '' %>`;
+
+    function goToStep(stepId) {
+      steps.forEach(step => step.classList.remove('active'));
+      const nextStep = document.getElementById(stepId);
+      if (nextStep) nextStep.classList.add('active');
+    }
+
+    function showModal() {
+      modal.style.display = 'flex';
+      goToStep('step1');
+      const inputs = modal.querySelectorAll('input[type="text"], input[type="number"]');
+      inputs.forEach(input => {
+        input.value = input.defaultValue || '';
+        if (input.type === 'number') input.value = input.getAttribute('value');
+      });
+    }
+
+    function hideModal() {
+      modal.style.display = 'none';
+    }
+
+    rsvpBtn.addEventListener('click', showModal);
+    closeBtn.addEventListener('click', hideModal);
+    closeConfirmBtn.addEventListener('click', hideModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+    modal.addEventListener('click', (e) => {
+      const target = e.target;
+      if (target.matches('[data-next-step]')) {
+        goToStep(target.getAttribute('data-next-step'));
+      }
+
+      if (target.matches('[data-rsvp-option]')) {
+        const option = target.getAttribute('data-rsvp-option');
+        let rsvpData = { option };
+
+        if (option === 'carpool-request') {
+          const address = document.getElementById('rider-address').value;
+          if (!address) { alert('Please enter your address.'); return; }
+          rsvpData.address = address;
+          submitRsvp(rsvpData).then(result => {
+            confirmationMessage.textContent = result.message;
+            goToStep('step-confirmation');
+          });
+        } else if (option === 'driver-offer') {
+          const address = document.getElementById('driver-address').value;
+          const radius = document.getElementById('drive-radius').value;
+          const seats = document.getElementById('seat-count').value;
+          if (!address || !radius || !seats) { alert('Please fill out all fields.'); return; }
+          rsvpData.address = address;
+          rsvpData.radius = radius;
+          rsvpData.seatCount = seats;
+          submitRsvp(rsvpData).then(result => {
+            confirmationMessage.textContent = result.message;
+            goToStep('step-confirmation');
+          });
+        } else if (option === 'bus-directions') {
+            const startAddress = document.getElementById('bus-address').value;
+            if (!startAddress) { alert('Please enter a starting address.'); return; }
+            if (!eventLocation || eventLocation.trim() === '') {
+                alert('Error: Event destination address is missing. Cannot provide directions.');
+                console.error('Event location is missing:', eventLocation);
+                return;
+            }
+            const destination = encodeURIComponent(eventLocation);
+            const origin = encodeURIComponent(startAddress);
+            const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=transit`;
+            window.open(mapsUrl, '_blank');
+            rsvpData.option = 'bus';
+            rsvpData.address = startAddress;
+            submitRsvp(rsvpData).then(result => {
+              confirmationMessage.textContent = result.message;
+              goToStep('step-confirmation');
+            });
+        } else {
+          submitRsvp(rsvpData).then(result => {
+            confirmationMessage.textContent = result.message;
+            goToStep('step-confirmation');
+          });
+        }
+      }
+    });
+  }
+});
+</script>
+<% } %>
+
+<%- include('../partials/footer') %>

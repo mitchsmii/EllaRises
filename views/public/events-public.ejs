@@ -35,7 +35,7 @@
                 </div>
                 <div class="event-info">
                   <span class="event-type <%= event.eventType ? event.eventType.toLowerCase().replace(/\s+/g, '-') : '' %>"><%= event.eventType || 'Event' %></span>
-                  <h3><%= event.title %></h3>
+                  <h3><a href="/events/<%= event.id %>"><%= event.title %></a></h3>
                   <p><%= event.description %></p>
                   <div class="event-details-row">
                     <% if (event.location) { %><span>📍 <%= event.location %></span><% } %>
@@ -45,11 +45,7 @@
                   </div>
                 </div>
                 <div class="event-actions">
-                  <% if (user) { %>
-                    <button class="btn btn-primary btn-sm">RSVP</button>
-                  <% } else { %>
-                    <a href="/login" class="btn btn-outline btn-sm">Login to RSVP</a>
-                  <% } %>
+                  <a href="/events/<%= event.id %>" class="btn btn-primary btn-sm">View Details & RSVP</a>
                   <% if (user && user.role === 'manager') { %>
                     <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
                   <% } %>
