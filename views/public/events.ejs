@@ -5,179 +5,477 @@
       <div class="container">
         <p class="eyebrow">Events</p>
         <h1>Join us at our <em>upcoming events</em>.</h1>
-        <p class="page-lead">From workshops to fundraisers, there's always something happening at Ella Rises. Find an event near you.</p>
-      </div>
-    </section>
-
-    <!-- Featured Event -->
-    <section class="section">
-      <div class="container">
-        <div class="featured-event">
-          <div class="event-badge">Featured Event</div>
-          <div class="featured-event-content">
-            <div class="event-date-large">
-              <span class="event-month">MAR</span>
-              <span class="event-day">15</span>
-              <span class="event-year">2025</span>
-            </div>
-            <div class="event-details">
-              <h2>Annual Gala: Rising Together</h2>
-              <p class="event-location">Grand Ballroom, Downtown Convention Center</p>
-              <p>Join us for our biggest fundraising event of the year! Celebrate the achievements of our scholars, enjoy dinner and entertainment, and help us raise funds to serve even more girls in the coming year.</p>
-              <div class="event-meta">
-                <span><strong>Time:</strong> 6:00 PM - 10:00 PM</span>
-                <span><strong>Tickets:</strong> $150 / $250 VIP</span>
-              </div>
-              <a href="/contact" class="btn btn-primary">Reserve Your Spot</a>
-            </div>
+        <p class="page-lead">From workshops to fundraisers, there's always something happening at Ella Rises.</p>
+        <% if (user && user.role === 'manager') { %>
+          <div class="hero-actions">
+            <a href="/manage/events" class="btn btn-primary">Manage Events</a>
+            <a href="/manage/events/new" class="btn btn-outline">+ Add New Event</a>
           </div>
-        </div>
+        <% } %>
       </div>
     </section>
 
     <!-- Upcoming Events -->
+    <section class="section">
+      <div class="container">
+        <!-- Search Bar -->
+        <div class="table-controls">
+          <form method="GET" action="/events" class="search-form">
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search by name, description, type, or location..." 
+              value="<%= searchTerm %>"
+              class="search-input"
+            >
+            <button type="submit" class="btn btn-primary">Search</button>
+            <% if (searchTerm) { %>
+              <a href="/events" class="btn btn-outline">Clear</a>
+            <% } %>
+          </form>
+        </div>
+
+        <div class="section-header">
+          <h2>Upcoming Events</h2>
+          <p class="text-muted">Join us at these upcoming events and workshops.</p>
+        </div>
+        <% if (events && events.length > 0) { %>
+          <div class="events-list">
+            <% events.forEach(event => { 
+              const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+            %>
+              <article class="event-card">
+                <div class="event-date">
+                  <% if (eventDate) { %>
+                    <span class="month"><%= eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() %></span>
+                    <span class="day"><%= eventDate.getDate() %></span>
+                    <span class="year"><%= eventDate.getFullYear() %></span>
+                  <% } else { %>
+                    <span class="month">TBD</span>
+                  <% } %>
+                </div>
+                <div class="event-info">
+                  <span class="event-type <%= event.eventType ? event.eventType.toLowerCase().replace(/\s+/g, '-') : '' %>"><%= event.eventType || 'Event' %></span>
+                  <h3><%= event.title %></h3>
+                  <p><%= event.description %></p>
+                  <div class="event-details-row">
+                    <% if (event.location) { %><span>📍 <%= event.location %></span><% } %>
+                    <% if (eventDate) { %><span>🕐 <%= eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %></span><% } %>
+                    <% if (event.capacity) { %>
+                      <span>👥 <%= event.registered || 0 %>/<%= event.capacity %> registered
+                        <% if (event.isFull) { %>
+                          <span class="badge badge-danger" style="margin-left: 8px;">Full</span>
+                        <% } %>
+                      </span>
+                    <% } %>
+                  </div>
+                </div>
+                <div class="event-actions">
+                  <% if (user) { %>
+                    <% if (event.userHasRSVPd) { %>
+                      <button class="btn btn-outline btn-sm cancel-rsvp-btn" data-detail-id="<%= event.detailId %>">Cancel RSVP</button>
+                      <span class="badge badge-success" style="margin-left: 8px;">You're Going!</span>
+                    <% } else if (event.isFull) { %>
+                      <button class="btn btn-outline btn-sm" disabled>Event Full</button>
+                    <% } else { %>
+                      <% 
+                        const deadlinePassed = event.registrationDeadline && new Date(event.registrationDeadline) < new Date();
+                      %>
+                      <% if (deadlinePassed) { %>
+                        <button class="btn btn-outline btn-sm" disabled>Registration Closed</button>
+                      <% } else { %>
+                        <button 
+                          class="btn btn-primary btn-sm rsvp-modal-btn" 
+                          data-detail-id="<%= event.detailId %>"
+                          data-event-title="<%= event.title %>"
+                          data-event-location="<%= event.location || '' %>"
+                          data-is-virtual="<%= event.location && (event.location.toLowerCase().includes('virtual') || event.location.toLowerCase().includes('zoom')) ? 'true' : 'false' %>"
+                        >RSVP</button>
+                      <% } %>
+                    <% } %>
+                  <% } else { %>
+                    <a href="/login?redirect=/events" class="btn btn-outline btn-sm">Login to RSVP</a>
+                  <% } %>
+                  <% if (user && user.role === 'manager') { %>
+                    <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+                  <% } %>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No upcoming events at this time. Check back soon!</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Past Events -->
     <section class="section section-alt">
       <div class="container">
         <div class="section-header">
-          <h2>Upcoming Events</h2>
-          <div class="event-filters">
-            <button class="filter-btn active">All</button>
-            <button class="filter-btn">Workshops</button>
-            <button class="filter-btn">Community</button>
-            <button class="filter-btn">Fundraising</button>
+          <h2>Past Events</h2>
+          <p class="text-muted">A look back at our recent events and activities.</p>
+        </div>
+        <% if (pastEvents && pastEvents.length > 0) { %>
+          <div class="events-list">
+            <% pastEvents.forEach(event => { 
+              const eventDate = event.eventDate ? new Date(event.eventDate) : null;
+            %>
+              <article class="event-card past-event">
+                <div class="event-date">
+                  <% if (eventDate) { %>
+                    <span class="month"><%= eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() %></span>
+                    <span class="day"><%= eventDate.getDate() %></span>
+                    <span class="year"><%= eventDate.getFullYear() %></span>
+                  <% } else { %>
+                    <span class="month">TBD</span>
+                  <% } %>
+                </div>
+                <div class="event-info">
+                  <span class="event-type <%= event.eventType ? event.eventType.toLowerCase().replace(/\s+/g, '-') : '' %>"><%= event.eventType || 'Event' %></span>
+                  <h3><%= event.title %></h3>
+                  <p><%= event.description %></p>
+                  <div class="event-details-row">
+                    <% if (event.location) { %><span>📍 <%= event.location %></span><% } %>
+                    <% if (eventDate) { %><span>🕐 <%= eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %></span><% } %>
+                    <% if (event.capacity) { %><span>👥 <%= event.capacity %> spots</span><% } %>
+                    <% if (event.recurrence) { %><span>🔄 <%= event.recurrence %></span><% } %>
+                  </div>
+                </div>
+                <div class="event-actions">
+                  <span class="badge badge-secondary">Past Event</span>
+                  <% if (user && user.role === 'manager') { %>
+                    <a href="/manage/events/<%= event.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+                  <% } %>
+                </div>
+              </article>
+            <% }) %>
           </div>
-        </div>
-
-        <div class="events-list">
-          <article class="event-card">
-            <div class="event-date">
-              <span class="month">JAN</span>
-              <span class="day">20</span>
-            </div>
-            <div class="event-info">
-              <span class="event-type">Workshop</span>
-              <h3>Resume Writing 101</h3>
-              <p>Learn how to craft a resume that stands out. Perfect for high school juniors and seniors.</p>
-              <div class="event-details-row">
-                <span>📍 Community Center, Room 204</span>
-                <span>🕐 3:00 PM - 5:00 PM</span>
-              </div>
-            </div>
-            <a href="/contact" class="btn btn-outline btn-sm">Register</a>
-          </article>
-
-          <article class="event-card">
-            <div class="event-date">
-              <span class="month">JAN</span>
-              <span class="day">27</span>
-            </div>
-            <div class="event-info">
-              <span class="event-type">Community</span>
-              <h3>Mentor Meet & Greet</h3>
-              <p>Monthly gathering for mentors to connect, share experiences, and learn from each other.</p>
-              <div class="event-details-row">
-                <span>📍 Ella Rises HQ</span>
-                <span>🕐 6:00 PM - 8:00 PM</span>
-              </div>
-            </div>
-            <a href="/contact" class="btn btn-outline btn-sm">Register</a>
-          </article>
-
-          <article class="event-card">
-            <div class="event-date">
-              <span class="month">FEB</span>
-              <span class="day">03</span>
-            </div>
-            <div class="event-info">
-              <span class="event-type">Workshop</span>
-              <h3>Financial Literacy for Teens</h3>
-              <p>Budgeting, saving, and understanding credit—essential skills for young adults.</p>
-              <div class="event-details-row">
-                <span>📍 Virtual Event</span>
-                <span>🕐 4:00 PM - 5:30 PM</span>
-              </div>
-            </div>
-            <a href="/contact" class="btn btn-outline btn-sm">Register</a>
-          </article>
-
-          <article class="event-card">
-            <div class="event-date">
-              <span class="month">FEB</span>
-              <span class="day">14</span>
-            </div>
-            <div class="event-info">
-              <span class="event-type">Community</span>
-              <h3>Galentine's Day Celebration</h3>
-              <p>Celebrate the women in your life! A fun afternoon of connection and appreciation.</p>
-              <div class="event-details-row">
-                <span>📍 Rose Garden Pavilion</span>
-                <span>🕐 2:00 PM - 5:00 PM</span>
-              </div>
-            </div>
-            <a href="/contact" class="btn btn-outline btn-sm">Register</a>
-          </article>
-
-          <article class="event-card">
-            <div class="event-date">
-              <span class="month">FEB</span>
-              <span class="day">22</span>
-            </div>
-            <div class="event-info">
-              <span class="event-type">Workshop</span>
-              <h3>Public Speaking Bootcamp</h3>
-              <p>Build confidence and learn techniques to speak with impact. All skill levels welcome.</p>
-              <div class="event-details-row">
-                <span>📍 City Library, Auditorium</span>
-                <span>🕐 10:00 AM - 2:00 PM</span>
-              </div>
-            </div>
-            <a href="/contact" class="btn btn-outline btn-sm">Register</a>
-          </article>
-        </div>
-
-        <div class="load-more">
-          <button class="btn btn-secondary">Load More Events</button>
-        </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>No past events to display.</p>
+          </div>
+        <% } %>
       </div>
     </section>
 
-    <!-- Host an Event -->
-    <section class="section">
-      <div class="container">
-        <div class="content-grid">
-          <div class="content-text">
-            <p class="eyebrow">Get Involved</p>
-            <h2>Host an event with us</h2>
-            <p>Want to bring Ella Rises programming to your school, company, or community? We partner with organizations to deliver workshops, speaking engagements, and more.</p>
-            <ul class="check-list">
-              <li>School assemblies and classroom workshops</li>
-              <li>Corporate lunch-and-learns</li>
-              <li>Community center programs</li>
-              <li>Conference speaking engagements</li>
-            </ul>
-            <a href="/contact" class="btn btn-primary">Request a Speaker</a>
-          </div>
-          <div class="content-visual">
-            <div class="image-placeholder">
-              <span>Event Hosting Image</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+<% if (user) { %>
+<!-- RSVP Modal for Physical Events -->
+<div class="modal-overlay" id="rsvp-modal">
+  <div class="modal-container">
+    <button class="modal-close" id="modal-close-btn">&times;</button>
 
-    <!-- Calendar CTA -->
-    <section class="section section-cta">
-      <div class="container">
-        <div class="cta-content">
-          <h2>Never miss an event</h2>
-          <p>Subscribe to our newsletter to get event updates and announcements delivered to your inbox.</p>
-          <div class="cta-buttons">
-            <a class="btn btn-primary btn-lg" href="/resources#newsletter">Subscribe</a>
-          </div>
-        </div>
+    <!-- Step 1: Initial Question -->
+    <div class="modal-step active" id="step1">
+      <h3>How are you getting to the event?</h3>
+      <p>This helps us coordinate and make sure everyone can get here safely.</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-next-step="step-need-ride">I need help finding a ride</button>
+        <button class="btn btn-outline" data-next-step="step-have-ride">I already have a ride</button>
       </div>
-    </section>
+    </div>
+
+    <!-- Step 2a: Needs a Ride Options -->
+    <div class="modal-step" id="step-need-ride">
+      <h3>How can we help?</h3>
+      <p>Select an option below. We'll do our best to help you get to the event.</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-next-step="step-rider-address">Request a Carpool Spot</button>
+        <button class="btn btn-secondary" data-next-step="step-bus-address">Get Bus Directions</button>
+        <button class="btn btn-outline" data-next-step="step1">← Back</button>
+      </div>
+    </div>
+    
+    <!-- Step 3a-1: Rider Address -->
+    <div class="modal-step" id="step-rider-address">
+      <h3>Enter Your Pickup Address</h3>
+      <p class="privacy-warning">For coordination, this address will be shared with your matched driver. Your phone number will also be shared.</p>
+      <div class="form-group">
+        <label for="rider-address">Your full address</label>
+        <input type="text" id="rider-address" placeholder="123 Main St, Anytown, USA" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-rsvp-option="carpool-request">Submit Carpool Request</button>
+        <button class="btn btn-outline" data-next-step="step-need-ride">← Back</button>
+      </div>
+    </div>
+    
+    <!-- Step 3a-2: Bus Address -->
+    <div class="modal-step" id="step-bus-address">
+      <h3>Get Public Transit Directions</h3>
+      <p>Enter your starting address below. We'll open Google Maps with transit directions for you.</p>
+      <div class="form-group">
+        <label for="bus-address">Your starting address</label>
+        <input type="text" id="bus-address" placeholder="123 Main St, Anytown, USA" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-rsvp-option="bus-directions">Show Directions & RSVP</button>
+        <button class="btn btn-outline" data-next-step="step-need-ride">← Back</button>
+      </div>
+    </div>
+
+    <!-- Step 2b: Has a Ride -->
+    <div class="modal-step" id="step-have-ride">
+      <h3>That's great!</h3>
+      <p>Some of our members need help getting to events. Would you be able to help by offering a ride to others?</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-next-step="step-can-drive">Yes, I can drive</button>
+        <button class="btn btn-outline" data-rsvp-option="no-drive">No, sorry I can't</button>
+        <button class="btn btn-outline" data-next-step="step1">← Back</button>
+      </div>
+    </div>
+
+    <!-- Step 3b: Driver Details -->
+    <div class="modal-step" id="step-can-drive">
+      <h3>You're amazing!</h3>
+      <p class="privacy-warning">Your address is used for matching and will be kept private. Your phone number will be shared with your matched rider for coordination.</p>
+      <div class="form-group">
+        <label for="driver-address">Your starting address</label>
+        <input type="text" id="driver-address" placeholder="123 Main St, Anytown, USA" required>
+      </div>
+      <div class="form-group">
+        <label for="drive-radius">Willing to travel (miles from your address)</label>
+        <input type="number" id="drive-radius" min="1" max="50" value="5" required>
+      </div>
+      <div class="form-group">
+        <label for="seat-count">Number of available seats</label>
+        <input type="number" id="seat-count" min="1" max="10" value="1" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-rsvp-option="driver-offer">Submit Driver Offer</button>
+        <button class="btn btn-outline" data-next-step="step-have-ride">← Back</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div class="modal-step" id="step-confirmation">
+      <h3>Thank You!</h3>
+      <p id="confirmation-message"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="modal-close-confirm-btn">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+    <script>
+      // RSVP Modal functionality
+      <% if (user) { %>
+      document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('rsvp-modal');
+        if (!modal) return;
+
+        const closeBtn = document.getElementById('modal-close-btn');
+        const closeConfirmBtn = document.getElementById('modal-close-confirm-btn');
+        const steps = modal.querySelectorAll('.modal-step');
+        const confirmationMessage = document.getElementById('confirmation-message');
+        let currentEventDetailId = null;
+        let currentEventLocation = '';
+
+        function goToStep(stepId) {
+          steps.forEach(step => step.classList.remove('active'));
+          const nextStep = document.getElementById(stepId);
+          if (nextStep) nextStep.classList.add('active');
+        }
+
+        function showModal(detailId, eventLocation, isVirtual) {
+          currentEventDetailId = detailId;
+          currentEventLocation = eventLocation || '';
+          
+          if (isVirtual === 'true') {
+            // Handle virtual event directly
+            submitRsvp({ option: 'virtual' }, detailId).then(result => {
+              alert(result.message);
+              window.location.reload();
+            });
+            return;
+          }
+
+          modal.classList.add('show');
+          goToStep('step1');
+          // Reset all form inputs
+          const inputs = modal.querySelectorAll('input[type="text"], input[type="number"]');
+          inputs.forEach(input => {
+            input.value = '';
+            if (input.type === 'number' && input.hasAttribute('value')) {
+              input.value = input.getAttribute('value');
+            }
+          });
+        }
+
+        function hideModal() {
+          modal.classList.remove('show');
+          currentEventDetailId = null;
+          currentEventLocation = '';
+        }
+
+        async function submitRsvp(data, detailId) {
+          try {
+            const response = await fetch(`/events/${detailId || currentEventDetailId}/rsvp`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error('Network response was not ok');
+            return await response.json();
+          } catch (error) {
+            console.error('RSVP Submission Error:', error);
+            return { success: false, message: 'Sorry, there was an error submitting your RSVP. Please try again later.' };
+          }
+        }
+
+        // Handle RSVP button clicks
+        document.querySelectorAll('.rsvp-modal-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const detailId = this.getAttribute('data-detail-id');
+            const eventLocation = this.getAttribute('data-event-location');
+            const isVirtual = this.getAttribute('data-is-virtual');
+            showModal(detailId, eventLocation, isVirtual);
+          });
+        });
+
+        closeBtn.addEventListener('click', hideModal);
+        closeConfirmBtn.addEventListener('click', () => {
+          hideModal();
+          window.location.reload(); // Reload to update RSVP status
+        });
+        
+        // Close modal when clicking overlay
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            hideModal();
+          }
+        });
+
+        // Handle button clicks inside modal
+        modal.addEventListener('click', (e) => {
+          const target = e.target.closest('button');
+          if (!target) return;
+
+          // Prevent event bubbling
+          e.stopPropagation();
+
+          if (target.matches('[data-next-step]')) {
+            e.preventDefault();
+            goToStep(target.getAttribute('data-next-step'));
+            return;
+          }
+
+          if (target.matches('[data-rsvp-option]')) {
+            e.preventDefault();
+            const option = target.getAttribute('data-rsvp-option');
+            let rsvpData = { option };
+
+            if (option === 'carpool-request') {
+              const address = document.getElementById('rider-address').value;
+              if (!address) { alert('Please enter your address.'); return; }
+              rsvpData.address = address;
+              submitRsvp(rsvpData).then(result => {
+                if (result.success) {
+                  confirmationMessage.textContent = result.message;
+                  goToStep('step-confirmation');
+                } else {
+                  alert('Error: ' + result.message);
+                }
+              });
+            } else if (option === 'driver-offer') {
+              const address = document.getElementById('driver-address').value;
+              const radius = document.getElementById('drive-radius').value;
+              const seats = document.getElementById('seat-count').value;
+              if (!address || !radius || !seats) { alert('Please fill out all fields.'); return; }
+              rsvpData.address = address;
+              rsvpData.radius = radius;
+              rsvpData.seatCount = seats;
+              submitRsvp(rsvpData).then(result => {
+                if (result.success) {
+                  confirmationMessage.textContent = result.message;
+                  goToStep('step-confirmation');
+                } else {
+                  alert('Error: ' + result.message);
+                }
+              });
+            } else if (option === 'bus-directions') {
+              const startAddress = document.getElementById('bus-address').value;
+              if (!startAddress) { alert('Please enter a starting address.'); return; }
+              if (!currentEventLocation || currentEventLocation.trim() === '') {
+                alert('Error: Event destination address is missing. Cannot provide directions.');
+                return;
+              }
+              const destination = encodeURIComponent(currentEventLocation);
+              const origin = encodeURIComponent(startAddress);
+              const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=transit`;
+              window.open(mapsUrl, '_blank');
+              rsvpData.option = 'bus';
+              rsvpData.address = startAddress;
+              submitRsvp(rsvpData).then(result => {
+                if (result.success) {
+                  confirmationMessage.textContent = result.message;
+                  goToStep('step-confirmation');
+                } else {
+                  alert('Error: ' + result.message);
+                }
+              });
+            } else {
+              submitRsvp(rsvpData).then(result => {
+                if (result.success) {
+                  confirmationMessage.textContent = result.message;
+                  goToStep('step-confirmation');
+                } else {
+                  alert('Error: ' + result.message);
+                }
+              });
+            }
+          }
+        });
+
+        // Initialize: hide modal and show only first step
+        hideModal();
+        goToStep('step1');
+      });
+      <% } %>
+
+      // Handle Cancel RSVP button clicks
+      document.querySelectorAll('.cancel-rsvp-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const detailId = this.getAttribute('data-detail-id');
+          
+          if (!confirm('Are you sure you want to cancel your RSVP?')) {
+            return;
+          }
+
+          const originalText = this.textContent;
+          this.disabled = true;
+          this.textContent = 'Cancelling...';
+
+          try {
+            const response = await fetch(`/events/${detailId}/rsvp`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              alert(result.message);
+              window.location.reload(); // Reload to update counts and status
+            } else {
+              alert('Error: ' + result.message);
+              this.disabled = false;
+              this.textContent = originalText;
+            }
+          } catch (error) {
+            alert('Error: ' + error.message);
+            this.disabled = false;
+            this.textContent = originalText;
+          }
+        });
+      });
+    </script>
 
 <%- include('../partials/footer') %>
 

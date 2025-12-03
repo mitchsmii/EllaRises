@@ -575,7 +575,7 @@ app.get('/events', async (req, res) => {
       userRegistrationId: userRegistrations[event.detailId]?.registrationId || null
     }));
     
-    res.render('public/events-public', { 
+    res.render('public/events', { 
       currentPage: 'events', 
       pageTitle: 'Events', 
       pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', 
@@ -586,7 +586,7 @@ app.get('/events', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching events:', error);
-    res.render('public/events-public', { 
+    res.render('public/events', { 
       currentPage: 'events', 
       pageTitle: 'Events', 
       pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', 
@@ -1167,7 +1167,7 @@ app.get('/manage/participants/:id/edit', requireManager, async (req, res) => {
       });
     }
 
-    res.render('admin/participant-form', {
+    res.render('admin/participants/form', {
       currentPage: 'participants',
       pageTitle: 'Edit Participant',
       participant: {
@@ -1212,7 +1212,7 @@ app.post('/manage/participants/:id', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!firstname || !lastname) {
-      return res.render('admin/participant-form', {
+      return res.render('admin/participants/form', {
         currentPage: 'participants',
         pageTitle: 'Edit Participant',
         participant: { personid: personId, ...req.body },
@@ -1544,7 +1544,7 @@ app.get('/surveys', requireLogin, async (req, res) => {
         createdAt: s.createdat || null // Use eventdatetimestart from event_details
       }));
 
-      res.render('admin/surveys-manage', {
+      res.render('admin/surveys/list', {
         currentPage: 'surveys',
         pageTitle: 'Manage Surveys',
         surveys: surveys,
@@ -1677,7 +1677,7 @@ app.get('/manage/events', requireManager, async (req, res) => {
       };
     });
 
-    res.render('admin/events-manage', { 
+    res.render('admin/events/list', { 
       currentPage: 'events', 
       pageTitle: 'Manage Events', 
       events,
@@ -1701,7 +1701,7 @@ app.get('/manage/events', requireManager, async (req, res) => {
 });
 
 app.get('/manage/events/new', requireManager, (req, res) => {
-  res.render('admin/event-form', { 
+  res.render('admin/events/form', { 
     currentPage: 'events', 
     pageTitle: 'Create Event', 
     event: null,
@@ -1755,7 +1755,7 @@ app.get('/manage/events/:id/edit', requireManager, async (req, res) => {
       detailId: event.detailId
     };
 
-    res.render('admin/event-form', { 
+    res.render('admin/events/form', { 
       currentPage: 'events', 
       pageTitle: 'Edit Event', 
       event: formattedEvent,
@@ -1778,7 +1778,7 @@ app.post('/manage/events', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!title || !eventType || !description || !eventDate || !eventTime || !location || !capacity) {
-      return res.render('admin/event-form', {
+      return res.render('admin/events/form', {
         currentPage: 'events',
         pageTitle: 'Create Event',
         event: req.body,
@@ -1831,7 +1831,7 @@ app.post('/manage/events', requireManager, async (req, res) => {
     res.redirect('/manage/events?message=Event created successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating event:', error);
-    res.render('admin/event-form', {
+    res.render('admin/events/form', {
       currentPage: 'events',
       pageTitle: 'Create Event',
       event: req.body,
@@ -1914,7 +1914,7 @@ app.post('/manage/events/:id', requireManager, async (req, res) => {
     res.redirect('/manage/events?message=Event updated successfully!&messageType=success');
   } catch (error) {
     console.error('Error updating event:', error);
-    res.render('admin/event-form', {
+    res.render('admin/events/form', {
       currentPage: 'events',
       pageTitle: 'Edit Event',
       event: { ...req.body, id: parseInt(req.params.id) },
@@ -2042,7 +2042,7 @@ app.get('/manage/events/:detailId/transportation', requireManager, async (req, r
     // Get carpooling data from memory
     const carpoolData = getCarpoolingData(eventDetailId);
 
-    res.render('admin/manage-transportation', {
+    res.render('admin/events/transportation', {
       currentPage: 'events',
       pageTitle: 'Manage Transportation',
       event: {
@@ -2123,7 +2123,7 @@ app.post('/manage/events/:detailId/match', requireManager, async (req, res) => {
 
 // GET /manage/surveys/new - Show form to add new survey (manager only)
 app.get('/manage/surveys/new', requireManager, (req, res) => {
-  res.render('admin/survey-form', {
+  res.render('admin/surveys/form', {
     currentPage: 'surveys',
     pageTitle: 'Create Survey',
     survey: null,
@@ -2156,7 +2156,7 @@ app.get('/surveys/:id/edit', requireManager, async (req, res) => {
       });
     }
 
-    res.render('admin/survey-form', {
+    res.render('admin/surveys/form', {
       currentPage: 'surveys',
       pageTitle: 'Edit Survey',
       survey: {
@@ -2183,7 +2183,7 @@ app.post('/manage/surveys', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!surveytitle) {
-      return res.render('admin/survey-form', {
+      return res.render('admin/surveys/form', {
         currentPage: 'surveys',
         pageTitle: 'Create Survey',
         survey: req.body,
@@ -2226,7 +2226,7 @@ app.post('/manage/surveys', requireManager, async (req, res) => {
     res.redirect('/surveys?message=Survey created successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating survey:', error);
-    res.render('admin/survey-form', {
+    res.render('admin/surveys/form', {
       currentPage: 'surveys',
       pageTitle: 'Create Survey',
       survey: req.body,
@@ -2258,7 +2258,7 @@ app.post('/manage/surveys/:id', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!surveytitle) {
-      return res.render('admin/survey-form', {
+      return res.render('admin/surveys/form', {
         currentPage: 'surveys',
         pageTitle: 'Edit Survey',
         survey: { surveyid: surveyId, ...req.body },
@@ -2426,7 +2426,7 @@ app.get('/surveys/:id/responses', requireManager, async (req, res) => {
     
     const questions = questionsResult.rows;
 
-    res.render('admin/survey-responses', {
+    res.render('admin/surveys/responses', {
       currentPage: 'surveys',
       pageTitle: `Survey Responses - ${surveyInfo.eventname}`,
       surveyInfo: {
@@ -2516,7 +2516,7 @@ app.get('/donations', requireLogin, async (req, res) => {
       personId: d.personid
     }));
 
-    res.render('admin/donations', {
+    res.render('admin/donations/list', {
       currentPage: 'donations',
       pageTitle: 'Donations',
       donations: donations,
@@ -2569,7 +2569,7 @@ app.get('/api/search-users', requireManager, async (req, res) => {
 });
 
 app.get('/manage/donations/new', requireManager, (req, res) => {
-  res.render('admin/donation-form', {
+  res.render('admin/donations/form', {
     currentPage: 'donations',
     pageTitle: 'Record Donation',
     donation: null,
@@ -2584,7 +2584,7 @@ app.post('/manage/donations', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!donationamount || !donationdate) {
-      return res.render('admin/donation-form', {
+      return res.render('admin/donations/form', {
         currentPage: 'donations',
         pageTitle: 'Record Donation',
         donation: req.body,
@@ -2609,7 +2609,7 @@ app.post('/manage/donations', requireManager, async (req, res) => {
     res.redirect('/donations?message=Donation recorded successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating donation:', error);
-    res.render('admin/donation-form', {
+    res.render('admin/donations/form', {
       currentPage: 'donations',
       pageTitle: 'Record Donation',
       donation: req.body,
@@ -2657,7 +2657,7 @@ app.get('/manage/donations/:id/edit', requireManager, async (req, res) => {
       }
     }
 
-    res.render('admin/donation-form', {
+    res.render('admin/donations/form', {
       currentPage: 'donations',
       pageTitle: 'Edit Donation',
       donation: {
@@ -2701,7 +2701,7 @@ app.post('/manage/donations/:id', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!donationamount || !donationdate) {
-      return res.render('admin/donation-form', {
+      return res.render('admin/donations/form', {
         currentPage: 'donations',
         pageTitle: 'Edit Donation',
         donation: { donationid: donationId, ...req.body },
@@ -2768,7 +2768,7 @@ app.get('/manage/milestones', requireManager, async (req, res) => {
         .limit(50);
     }
 
-    res.render('admin/milestones-manage', {
+    res.render('admin/milestones/list', {
       currentPage: 'milestones',
       pageTitle: 'Manage Milestones',
       search,
@@ -2776,7 +2776,7 @@ app.get('/manage/milestones', requireManager, async (req, res) => {
     });
   } catch (error) {
     console.error('Error searching participants:', error);
-    res.render('admin/milestones-manage', {
+    res.render('admin/milestones/list', {
       currentPage: 'milestones',
       pageTitle: 'Manage Milestones',
       search: '',
@@ -2876,7 +2876,7 @@ app.get('/manage/milestones/:personid', requireManager, async (req, res) => {
       .orderBy('milestonecategory', 'asc')
       .orderBy('milestonetypeid', 'asc');
 
-    res.render('admin/milestones-participant', {
+    res.render('admin/milestones/participant', {
       currentPage: 'milestones',
       pageTitle: `Milestones - ${participant.firstname} ${participant.lastname}`,
       participant,
@@ -3122,7 +3122,7 @@ app.get('/admin/users', requireManager, async (req, res) => {
       personId: u.personid || null
     }));
     
-    res.render('admin/admin-users', { 
+    res.render('admin/users/list', { 
       currentPage: 'admin', 
       pageTitle: 'Manage Users', 
       users,
@@ -3137,7 +3137,7 @@ app.get('/admin/users', requireManager, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.render('admin/admin-users', { 
+    res.render('admin/users/list', { 
       currentPage: 'admin', 
       pageTitle: 'Manage Users', 
       users: [],
@@ -3153,7 +3153,7 @@ app.get('/admin/users', requireManager, async (req, res) => {
 
 // GET /admin/users/new - Show form to add new user
 app.get('/admin/users/new', requireManager, (req, res) => {
-  res.render('admin/user-form', {
+  res.render('admin/users/form', {
     currentPage: 'admin',
     pageTitle: 'Add New User',
     user: null,
@@ -3168,7 +3168,7 @@ app.post('/admin/users', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!email || !level) {
-      return res.render('admin/user-form', {
+      return res.render('admin/users/form', {
         currentPage: 'admin',
         pageTitle: 'Add New User',
         user: req.body,
@@ -3185,7 +3185,7 @@ app.post('/admin/users', requireManager, async (req, res) => {
       .first();
 
     if (existingUser) {
-      return res.render('admin/user-form', {
+      return res.render('admin/users/form', {
         currentPage: 'admin',
         pageTitle: 'Add New User',
         user: req.body,
@@ -3245,7 +3245,7 @@ app.post('/admin/users', requireManager, async (req, res) => {
     res.redirect('/admin/users?message=User created successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating user:', error);
-    res.render('admin/user-form', {
+    res.render('admin/users/form', {
       currentPage: 'admin',
       pageTitle: 'Add New User',
       user: req.body,
@@ -3274,7 +3274,7 @@ app.get('/admin/users/:email/edit', requireManager, async (req, res) => {
       .where('email', email)
       .first();
 
-    res.render('admin/user-form', {
+    res.render('admin/users/form', {
       currentPage: 'admin',
       pageTitle: 'Edit User',
       user: {
@@ -3370,7 +3370,7 @@ app.post('/admin/users/:email', requireManager, async (req, res) => {
     res.redirect('/admin/users?message=User updated successfully!&messageType=success');
   } catch (error) {
     console.error('Error updating user:', error);
-    res.render('admin/user-form', {
+    res.render('admin/users/form', {
       currentPage: 'admin',
       pageTitle: 'Edit User',
       user: { ...req.body, email: decodeURIComponent(req.params.email) },
