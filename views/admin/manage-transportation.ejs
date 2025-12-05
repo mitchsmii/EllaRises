@@ -1,4 +1,4 @@
-<%- include('../../partials/header') %>
+<%- include('../partials/header') %>
 
 <section class="page-hero compact">
   <div class="container">
@@ -23,7 +23,6 @@
       <div class="match-maker-wrapper">
         <h3>Create a Match</h3>
         <form action="/manage/events/<%= event.id %>/match" method="POST" class="match-form">
-          <input type="hidden" name="eventDetailId" value="<%= event.id %>">
           <div class="form-group">
             <label for="driver-select">Select a Driver</label>
             <select name="driverEmail" id="driver-select" required>
@@ -202,4 +201,4 @@
   }
 </style>
 
-<%- include('../../partials/footer') %>
+<%- include('../partials/footer') %>
