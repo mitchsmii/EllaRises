@@ -60,27 +60,21 @@
         </div>
         
         <div class="feature-grid">
-          <% 
-            const cardRoutes = ['/programs', '/events', '/media'];
-            focusAreas.forEach((area, index) => { 
-          %>
-            <a href="<%= cardRoutes[index] %>" class="feature-card">
+          <% focusAreas.forEach((area, index) => { %>
+            <article class="feature-card">
               <div class="feature-icon">
                 <% if (index === 0) { %>
-                  <!-- Programs Icon - Book -->
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <% } else if (index === 1) { %>
-                  <!-- Events Icon - Calendar -->
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                 <% } else { %>
-                  <!-- Media Icon - News/Microphone -->
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/><path d="M12 14v-4"/><path d="M9 6V4a3 3 0 0 1 6 0v2"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                 <% } %>
               </div>
               <h3><%= area.title %></h3>
               <p><%= area.copy %></p>
-              <span class="card-link">Learn more →</span>
-            </a>
+              <a href="/programs#<%= area.title.toLowerCase() %>" class="card-link">Learn more →</a>
+            </article>
           <% }) %>
         </div>
       </div>
@@ -131,7 +125,7 @@
         </div>
         
         <div class="stories-cta">
-          <a href="/media" class="btn btn-outline">View Media Coverage</a>
+          <a href="/stories" class="btn btn-outline">Read More Stories</a>
         </div>
       </div>
     </section>
@@ -145,7 +139,7 @@
           <p>Partner as a mentor, donor, or advocate. Together we can make sure every girl knows she belongs and is ready to lead.</p>
           <div class="cta-buttons">
             <a class="btn btn-primary btn-lg" href="/donate">Donate Now</a>
-            <a class="btn btn-outline-light btn-lg" href="/contact">Volunteer</a>
+            <a class="btn btn-outline-light btn-lg" href="/get-involved">Volunteer</a>
             <a class="btn btn-outline-light btn-lg" href="/contact">Contact Us</a>
           </div>
         </div>

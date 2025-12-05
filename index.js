@@ -6,25 +6,6 @@ const multer = require('multer');
 const fs = require('fs');
 const session = require('express-session');
 
-// ============================================
-// IN-MEMORY CARPOOLING STORAGE
-// ============================================
-// Store carpooling data in memory (not in database)
-// Structure: { eventDetailId: { drivers: [], riders: [], matches: [] } }
-const carpoolingData = {};
-
-// Helper function to get or initialize carpooling data for an event
-function getCarpoolingData(eventDetailId) {
-  if (!carpoolingData[eventDetailId]) {
-    carpoolingData[eventDetailId] = {
-      drivers: [],
-      riders: [],
-      matches: []
-    };
-  }
-  return carpoolingData[eventDetailId];
-}
-
 // Database connection (uncomment when ready to use)
 // const { db, testConnection } = require('./db');
 
@@ -205,15 +186,15 @@ const brand = {
 };
 
 const focusAreas = [
-  { title: 'Programs', copy: 'Explore our culturally rooted programs including Ballet Folklórico, Mariachi, STEAM, and educational pathways that empower young women.' },
-  { title: 'Events', copy: 'Join us for workshops, community gatherings, and special events designed to inspire, educate, and connect our community.' },
-  { title: 'Media', copy: 'See how local news outlets, radio stations, and media platforms are sharing our mission and impact with the community.' },
+  { title: 'Mentorship', copy: 'Pairing young women with mentors and leaders who open doors, share wisdom, and help chart clear next steps.' },
+  { title: 'Education', copy: 'Workshops, scholarships, and skill-building that equip girls with confidence and practical tools.' },
+  { title: 'Community', copy: 'Circles of support where women advocate for each other, celebrate wins, and show up in service.' },
 ];
 
 const stats = [
-  { label: 'Students served', value: '450+' },
-  { label: 'Mentor matches', value: '200+' },
-  { label: 'Workshops delivered', value: '50+' },
+  { label: 'Students served', value: '1,200+' },
+  { label: 'Mentor matches', value: '350' },
+  { label: 'Workshops delivered', value: '80+' },
 ];
 
 const stories = [
@@ -320,7 +301,7 @@ app.post('/login', async (req, res) => {
       });
     }
     
-    // Plain text password comparison
+    // Plain text password comparison (add bcrypt later)
     if (loginUser.password !== password) {
       return res.render('auth/login', {
         currentPage: 'login',
@@ -364,8 +345,6 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
   });
 });
-
-
 
 
 
@@ -439,13 +418,8 @@ app.get('/programs', (req, res) => {
   res.render('public/programs', { currentPage: 'programs', pageTitle: 'Our Programs', pageDescription: 'Explore our mentorship, education, and community programs.', focusAreas });
 });
 
-app.get('/media', (req, res) => {
-  res.render('public/stories', { currentPage: 'media', pageTitle: 'Media Coverage', pageDescription: 'See how local news outlets, radio stations, and media platforms are sharing our mission and impact with the community.', stories });
-});
-
-// Keep /stories route for backwards compatibility, redirect to /media
 app.get('/stories', (req, res) => {
-  res.redirect('/media');
+  res.render('public/stories', { currentPage: 'stories', pageTitle: 'Success Stories', pageDescription: 'Read inspiring stories from the women and girls we serve.', stories });
 });
 
 app.get('/events', async (req, res) => {
@@ -582,7 +556,7 @@ app.get('/events', async (req, res) => {
       userRegistrationId: userRegistrations[event.detailId]?.registrationId || null
     }));
     
-    res.render('public/events', { 
+    res.render('public/events-public', { 
       currentPage: 'events', 
       pageTitle: 'Events', 
       pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', 
@@ -593,7 +567,7 @@ app.get('/events', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching events:', error);
-    res.render('public/events', { 
+    res.render('public/events-public', { 
       currentPage: 'events', 
       pageTitle: 'Events', 
       pageDescription: 'Find upcoming workshops, community gatherings, and fundraising events.', 
@@ -632,13 +606,11 @@ app.post('/events/:detailId/rsvp', requireLogin, async (req, res) => {
       });
     }
 
-    // Check if event start time is in the past (allow RSVP up to event start time)
-    // Note: We allow RSVP even if event has started but not ended yet
-    // Only block if event has completely ended
-    if (eventDetail.eventdatetimeend && new Date(eventDetail.eventdatetimeend) < new Date()) {
+    // Check if event is in the past
+    if (new Date(eventDetail.eventdatetimestart) < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot RSVP to events that have already ended.'
+        message: 'Cannot RSVP to past events.'
       });
     }
 
@@ -690,90 +662,13 @@ app.post('/events/:detailId/rsvp', requireLogin, async (req, res) => {
     `);
     const nextRegistrationId = maxReg.rows[0].maxid ? parseInt(maxReg.rows[0].maxid) + 1 : 1;
 
-    // Create registration in database
+    // Create registration
     // Using 'active' instead of 'registered' to fit within character varying(9) constraint
     await knex.raw(`
       INSERT INTO registration (registrationid, personid, eventdetailid, registrationstatus, registrationattendedflag, registrationcreateddate)
       VALUES (?, ?, ?, ?, ?, ?)
     `, [nextRegistrationId, person.personid, eventDetailId, 'active', 0, new Date()]);
 
-    // Handle carpooling options (stored in memory, not database)
-    const { option, address, radius, seatCount } = req.body;
-    const carpoolData = getCarpoolingData(eventDetailId);
-    
-    if (option === 'carpool-request' && address) {
-      // Add rider request
-      const existingRiderIndex = carpoolData.riders.findIndex(r => r.userEmail === person.email);
-      if (existingRiderIndex >= 0) {
-        carpoolData.riders[existingRiderIndex] = {
-          userEmail: person.email,
-          userName: `${person.firstname} ${person.lastname}`,
-          phone: person.phone || '',
-          address: address,
-          eventDetailId: eventDetailId
-        };
-      } else {
-        carpoolData.riders.push({
-          userEmail: person.email,
-          userName: `${person.firstname} ${person.lastname}`,
-          phone: person.phone || '',
-          address: address,
-          eventDetailId: eventDetailId
-        });
-      }
-      return res.json({
-        success: true,
-        message: 'Successfully RSVP\'d and submitted carpool request! We\'ll match you with a driver soon.'
-      });
-    } else if (option === 'driver-offer' && address && radius && seatCount) {
-      // Add driver offer
-      const existingDriverIndex = carpoolData.drivers.findIndex(d => d.userEmail === person.email);
-      if (existingDriverIndex >= 0) {
-        carpoolData.drivers[existingDriverIndex] = {
-          userEmail: person.email,
-          userName: `${person.firstname} ${person.lastname}`,
-          phone: person.phone || '',
-          address: address,
-          radius: parseFloat(radius),
-          seatCount: parseInt(seatCount),
-          eventDetailId: eventDetailId
-        };
-      } else {
-        carpoolData.drivers.push({
-          userEmail: person.email,
-          userName: `${person.firstname} ${person.lastname}`,
-          phone: person.phone || '',
-          address: address,
-          radius: parseFloat(radius),
-          seatCount: parseInt(seatCount),
-          eventDetailId: eventDetailId
-        });
-      }
-      return res.json({
-        success: true,
-        message: 'Successfully RSVP\'d and registered as a driver! Thank you for helping others get to the event.'
-      });
-    } else if (option === 'bus' || option === 'bus-directions') {
-      // Just RSVP, no carpooling data needed
-      return res.json({
-        success: true,
-        message: 'Successfully RSVP\'d! We hope you have a safe trip using public transit.'
-      });
-    } else if (option === 'virtual') {
-      // Virtual event RSVP
-      return res.json({
-        success: true,
-        message: 'Successfully RSVP\'d to the virtual event! We\'ll send you the link closer to the event date.'
-      });
-    } else if (option === 'no-drive') {
-      // User has a ride but can't drive others - just RSVP
-      return res.json({
-        success: true,
-        message: 'Successfully RSVP\'d to the event!'
-      });
-    }
-
-    // Regular RSVP (no carpooling option)
     res.json({
       success: true,
       message: 'Successfully RSVP\'d to the event!'
@@ -828,15 +723,6 @@ app.delete('/events/:detailId/rsvp', requireLogin, async (req, res) => {
       WHERE registrationid = ?
     `, [registration.rows[0].registrationid]);
 
-    // Remove from carpooling data if they were a driver or rider
-    const carpoolData = getCarpoolingData(eventDetailId);
-    carpoolData.drivers = carpoolData.drivers.filter(d => d.userEmail !== person.email);
-    carpoolData.riders = carpoolData.riders.filter(r => r.userEmail !== person.email);
-    // Remove any matches involving this user
-    carpoolData.matches = carpoolData.matches.filter(m => 
-      m.driverEmail !== person.email && m.riderEmail !== person.email
-    );
-
     res.json({
       success: true,
       message: 'RSVP cancelled successfully.'
@@ -851,7 +737,7 @@ app.delete('/events/:detailId/rsvp', requireLogin, async (req, res) => {
 });
 
 app.get('/get-involved', (req, res) => {
-  res.redirect('/contact');
+  res.render('public/get-involved', { currentPage: 'get-involved', pageTitle: 'Get Involved', pageDescription: 'Discover ways to volunteer, mentor, donate, and partner with Ella Rises.' });
 });
 
 app.get('/donate', async (req, res) => {
@@ -1045,6 +931,9 @@ app.get('/418', (req, res) => {
   });
 });
 
+app.get('/resources', (req, res) => {
+  res.render('public/resources', { currentPage: 'resources', pageTitle: 'Resources', pageDescription: 'Tools and information for students, mentors, and families.' });
+});
 
 app.post('/contact', (req, res) => {
   res.redirect('/contact?success=true');
@@ -1173,7 +1062,7 @@ app.get('/manage/participants/:id/edit', requireManager, async (req, res) => {
       });
     }
 
-    res.render('admin/participants/form', {
+    res.render('admin/participant-form', {
       currentPage: 'participants',
       pageTitle: 'Edit Participant',
       participant: {
@@ -1218,7 +1107,7 @@ app.post('/manage/participants/:id', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!firstname || !lastname) {
-      return res.render('admin/participants/form', {
+      return res.render('admin/participant-form', {
         currentPage: 'participants',
         pageTitle: 'Edit Participant',
         participant: { personid: personId, ...req.body },
@@ -1550,7 +1439,7 @@ app.get('/surveys', requireLogin, async (req, res) => {
         createdAt: s.createdat || null // Use eventdatetimestart from event_details
       }));
 
-      res.render('admin/surveys/list', {
+      res.render('admin/surveys-manage', {
         currentPage: 'surveys',
         pageTitle: 'Manage Surveys',
         surveys: surveys,
@@ -1683,7 +1572,7 @@ app.get('/manage/events', requireManager, async (req, res) => {
       };
     });
 
-    res.render('admin/events/list', { 
+    res.render('admin/events-manage', { 
       currentPage: 'events', 
       pageTitle: 'Manage Events', 
       events,
@@ -1707,7 +1596,7 @@ app.get('/manage/events', requireManager, async (req, res) => {
 });
 
 app.get('/manage/events/new', requireManager, (req, res) => {
-  res.render('admin/events/form', { 
+  res.render('admin/event-form', { 
     currentPage: 'events', 
     pageTitle: 'Create Event', 
     event: null,
@@ -1761,7 +1650,7 @@ app.get('/manage/events/:id/edit', requireManager, async (req, res) => {
       detailId: event.detailId
     };
 
-    res.render('admin/events/form', { 
+    res.render('admin/event-form', { 
       currentPage: 'events', 
       pageTitle: 'Edit Event', 
       event: formattedEvent,
@@ -1784,7 +1673,7 @@ app.post('/manage/events', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!title || !eventType || !description || !eventDate || !eventTime || !location || !capacity) {
-      return res.render('admin/events/form', {
+      return res.render('admin/event-form', {
         currentPage: 'events',
         pageTitle: 'Create Event',
         event: req.body,
@@ -1837,7 +1726,7 @@ app.post('/manage/events', requireManager, async (req, res) => {
     res.redirect('/manage/events?message=Event created successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating event:', error);
-    res.render('admin/events/form', {
+    res.render('admin/event-form', {
       currentPage: 'events',
       pageTitle: 'Create Event',
       event: req.body,
@@ -1920,7 +1809,7 @@ app.post('/manage/events/:id', requireManager, async (req, res) => {
     res.redirect('/manage/events?message=Event updated successfully!&messageType=success');
   } catch (error) {
     console.error('Error updating event:', error);
-    res.render('admin/events/form', {
+    res.render('admin/event-form', {
       currentPage: 'events',
       pageTitle: 'Edit Event',
       event: { ...req.body, id: parseInt(req.params.id) },
@@ -1944,15 +1833,6 @@ app.delete('/manage/events/:id', requireManager, async (req, res) => {
       .where('eventid', eventId)
       .del();
 
-    // Also clean up carpooling data for this event
-    const eventDetails = await knex('event_details')
-      .where('eventid', eventId)
-      .select('eventdetailid');
-    
-    eventDetails.forEach(detail => {
-      delete carpoolingData[detail.eventdetailid];
-    });
-
     res.json({
       success: true,
       message: 'Event deleted successfully.'
@@ -1966,170 +1846,9 @@ app.delete('/manage/events/:id', requireManager, async (req, res) => {
   }
 });
 
-// GET /events/:detailId - Show event detail page
-app.get('/events/:detailId', async (req, res) => {
-  try {
-    const eventDetailId = parseInt(req.params.detailId);
-    
-    const eventData = await knex('events')
-      .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
-      .where('event_details.eventdetailid', eventDetailId)
-      .select(
-        'events.eventid',
-        'events.eventname as title',
-        'events.eventtype as eventType',
-        'events.eventdescription as description',
-        'event_details.eventdatetimestart as eventDate',
-        'event_details.eventlocation as location',
-        'event_details.eventdetailid as detailId'
-      )
-      .first();
-
-    if (!eventData) {
-      return res.status(404).render('errors/404', {
-        currentPage: 'events',
-        pageTitle: 'Event Not Found'
-      });
-    }
-
-    // Format event for view
-    const event = {
-      id: eventData.detailId, // Use detailId for RSVP route
-      title: eventData.title,
-      eventType: eventData.eventType,
-      description: eventData.description,
-      eventDate: eventData.eventDate,
-      location: eventData.location
-    };
-
-    res.render('public/event-detail', {
-      currentPage: 'events',
-      pageTitle: event.title,
-      event: event,
-      user: req.session.user || null
-    });
-  } catch (error) {
-    console.error('Error fetching event detail:', error);
-    res.status(500).render('errors/500', {
-      currentPage: 'events',
-      pageTitle: 'Error',
-      message: 'Failed to load event details.'
-    });
-  }
-});
-
-// GET /manage/events/:detailId/transportation - Manage transportation for an event (manager only)
-app.get('/manage/events/:detailId/transportation', requireManager, async (req, res) => {
-  try {
-    const eventDetailId = parseInt(req.params.detailId);
-    
-    // Get event information
-    const eventData = await knex('events')
-      .leftJoin('event_details', 'events.eventid', 'event_details.eventid')
-      .where('event_details.eventdetailid', eventDetailId)
-      .select(
-        'events.eventid',
-        'events.eventname as title',
-        'events.eventtype as eventType',
-        'events.eventdescription as description',
-        'event_details.eventdatetimestart as eventDate',
-        'event_details.eventlocation as location',
-        'event_details.eventdetailid as detailId'
-      )
-      .first();
-
-    if (!eventData) {
-      return res.status(404).render('errors/404', {
-        currentPage: 'events',
-        pageTitle: 'Event Not Found'
-      });
-    }
-
-    // Get carpooling data from memory
-    const carpoolData = getCarpoolingData(eventDetailId);
-
-    res.render('admin/events/transportation', {
-      currentPage: 'events',
-      pageTitle: 'Manage Transportation',
-      event: {
-        id: eventData.detailId,
-        title: eventData.title
-      },
-      drivers: carpoolData.drivers,
-      riders: carpoolData.riders,
-      matches: carpoolData.matches,
-      matchMessage: req.query.matchMessage || null,
-      matchSuccess: req.query.matchSuccess === 'true'
-    });
-  } catch (error) {
-    console.error('Error fetching transportation data:', error);
-    res.status(500).render('errors/500', {
-      currentPage: 'events',
-      pageTitle: 'Error',
-      message: 'Failed to load transportation data.'
-    });
-  }
-});
-
-// POST /manage/events/:detailId/match - Create a match between driver and rider (manager only)
-app.post('/manage/events/:detailId/match', requireManager, async (req, res) => {
-  try {
-    const eventDetailId = parseInt(req.params.detailId);
-    const { driverEmail, riderEmail } = req.body;
-
-    if (!driverEmail || !riderEmail) {
-      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent('Please select both a driver and a rider.')}&matchSuccess=false`);
-    }
-
-    const carpoolData = getCarpoolingData(eventDetailId);
-
-    // Find driver and rider
-    const driver = carpoolData.drivers.find(d => d.userEmail === driverEmail);
-    const rider = carpoolData.riders.find(r => r.userEmail === riderEmail);
-
-    if (!driver) {
-      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent('Driver not found.')}&matchSuccess=false`);
-    }
-
-    if (!rider) {
-      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent('Rider not found.')}&matchSuccess=false`);
-    }
-
-    // Check if driver has available seats
-    const existingMatchesForDriver = carpoolData.matches.filter(m => m.driverEmail === driverEmail).length;
-    if (existingMatchesForDriver >= driver.seatCount) {
-      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent(`Driver ${driver.userName} has already been matched with all available seats (${driver.seatCount}).`)}&matchSuccess=false`);
-    }
-
-    // Check if rider is already matched
-    const existingMatchForRider = carpoolData.matches.find(m => m.riderEmail === riderEmail);
-    if (existingMatchForRider) {
-      return res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent(`Rider ${rider.userName} is already matched with a driver.`)}&matchSuccess=false`);
-    }
-
-    // Create match
-    carpoolData.matches.push({
-      driverEmail: driverEmail,
-      driverName: driver.userName,
-      driverPhone: driver.phone,
-      driverAddress: driver.address,
-      riderEmail: riderEmail,
-      riderName: rider.userName,
-      riderPhone: rider.phone,
-      riderAddress: rider.address,
-      matchedAt: new Date()
-    });
-
-    res.redirect(`/manage/events/${eventDetailId}/transportation?matchMessage=${encodeURIComponent(`Successfully matched ${driver.userName} with ${rider.userName}!`)}&matchSuccess=true`);
-  } catch (error) {
-    console.error('Error creating match:', error);
-    res.redirect(`/manage/events/${req.params.detailId}/transportation?matchMessage=${encodeURIComponent('An error occurred while creating the match.')}&matchSuccess=false`);
-  }
-});
-
 // GET /manage/surveys/new - Show form to add new survey (manager only)
 app.get('/manage/surveys/new', requireManager, (req, res) => {
-  res.render('admin/surveys/form', {
+  res.render('admin/survey-form', {
     currentPage: 'surveys',
     pageTitle: 'Create Survey',
     survey: null,
@@ -2138,13 +1857,7 @@ app.get('/manage/surveys/new', requireManager, (req, res) => {
 });
 
 // GET /surveys/:id/edit - Show form to edit survey (manager only)
-// GET /surveys/:id/edit - Edit survey (manager only) - legacy route
 app.get('/surveys/:id/edit', requireManager, async (req, res) => {
-  res.redirect(`/manage/surveys/${req.params.id}/edit`);
-});
-
-// GET /manage/surveys/:id/edit - Edit survey (manager only)
-app.get('/manage/surveys/:id/edit', requireManager, async (req, res) => {
   try {
     const surveyId = parseInt(req.params.id);
     
@@ -2168,7 +1881,7 @@ app.get('/manage/surveys/:id/edit', requireManager, async (req, res) => {
       });
     }
 
-    res.render('admin/surveys/form', {
+    res.render('admin/survey-form', {
       currentPage: 'surveys',
       pageTitle: 'Edit Survey',
       survey: {
@@ -2195,7 +1908,7 @@ app.post('/manage/surveys', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!surveytitle) {
-      return res.render('admin/surveys/form', {
+      return res.render('admin/survey-form', {
         currentPage: 'surveys',
         pageTitle: 'Create Survey',
         survey: req.body,
@@ -2238,7 +1951,7 @@ app.post('/manage/surveys', requireManager, async (req, res) => {
     res.redirect('/surveys?message=Survey created successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating survey:', error);
-    res.render('admin/surveys/form', {
+    res.render('admin/survey-form', {
       currentPage: 'surveys',
       pageTitle: 'Create Survey',
       survey: req.body,
@@ -2270,7 +1983,7 @@ app.post('/manage/surveys/:id', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!surveytitle) {
-      return res.render('admin/surveys/form', {
+      return res.render('admin/survey-form', {
         currentPage: 'surveys',
         pageTitle: 'Edit Survey',
         survey: { surveyid: surveyId, ...req.body },
@@ -2438,7 +2151,7 @@ app.get('/surveys/:id/responses', requireManager, async (req, res) => {
     
     const questions = questionsResult.rows;
 
-    res.render('admin/surveys/responses', {
+    res.render('admin/survey-responses', {
       currentPage: 'surveys',
       pageTitle: `Survey Responses - ${surveyInfo.eventname}`,
       surveyInfo: {
@@ -2528,7 +2241,7 @@ app.get('/donations', requireLogin, async (req, res) => {
       personId: d.personid
     }));
 
-    res.render('admin/donations/list', {
+    res.render('admin/donations', {
       currentPage: 'donations',
       pageTitle: 'Donations',
       donations: donations,
@@ -2581,7 +2294,7 @@ app.get('/api/search-users', requireManager, async (req, res) => {
 });
 
 app.get('/manage/donations/new', requireManager, (req, res) => {
-  res.render('admin/donations/form', {
+  res.render('admin/donation-form', {
     currentPage: 'donations',
     pageTitle: 'Record Donation',
     donation: null,
@@ -2596,7 +2309,7 @@ app.post('/manage/donations', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!donationamount || !donationdate) {
-      return res.render('admin/donations/form', {
+      return res.render('admin/donation-form', {
         currentPage: 'donations',
         pageTitle: 'Record Donation',
         donation: req.body,
@@ -2621,7 +2334,7 @@ app.post('/manage/donations', requireManager, async (req, res) => {
     res.redirect('/donations?message=Donation recorded successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating donation:', error);
-    res.render('admin/donations/form', {
+    res.render('admin/donation-form', {
       currentPage: 'donations',
       pageTitle: 'Record Donation',
       donation: req.body,
@@ -2669,7 +2382,7 @@ app.get('/manage/donations/:id/edit', requireManager, async (req, res) => {
       }
     }
 
-    res.render('admin/donations/form', {
+    res.render('admin/donation-form', {
       currentPage: 'donations',
       pageTitle: 'Edit Donation',
       donation: {
@@ -2713,7 +2426,7 @@ app.post('/manage/donations/:id', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!donationamount || !donationdate) {
-      return res.render('admin/donations/form', {
+      return res.render('admin/donation-form', {
         currentPage: 'donations',
         pageTitle: 'Edit Donation',
         donation: { donationid: donationId, ...req.body },
@@ -2763,15 +2476,6 @@ app.delete('/manage/donations/:id', requireManager, async (req, res) => {
   }
 });
 
-// GET /admin/analytics - Analytics dashboard with Tableau embed (manager only)
-app.get('/admin/analytics', requireManager, (req, res) => {
-  res.render('admin/analytics', {
-    currentPage: 'analytics',
-    pageTitle: 'Analytics Dashboard',
-    pageDescription: 'View data analytics and insights'
-  });
-});
-
 app.get('/manage/milestones', requireManager, async (req, res) => {
   try {
     const search = req.query.search || '';
@@ -2789,7 +2493,7 @@ app.get('/manage/milestones', requireManager, async (req, res) => {
         .limit(50);
     }
 
-    res.render('admin/milestones/list', {
+    res.render('admin/milestones-manage', {
       currentPage: 'milestones',
       pageTitle: 'Manage Milestones',
       search,
@@ -2797,7 +2501,7 @@ app.get('/manage/milestones', requireManager, async (req, res) => {
     });
   } catch (error) {
     console.error('Error searching participants:', error);
-    res.render('admin/milestones/list', {
+    res.render('admin/milestones-manage', {
       currentPage: 'milestones',
       pageTitle: 'Manage Milestones',
       search: '',
@@ -2897,7 +2601,7 @@ app.get('/manage/milestones/:personid', requireManager, async (req, res) => {
       .orderBy('milestonecategory', 'asc')
       .orderBy('milestonetypeid', 'asc');
 
-    res.render('admin/milestones/participant', {
+    res.render('admin/milestones-participant', {
       currentPage: 'milestones',
       pageTitle: `Milestones - ${participant.firstname} ${participant.lastname}`,
       participant,
@@ -3092,11 +2796,6 @@ app.delete('/manage/milestones/:id', requireManager, async (req, res) => {
   }
 });
 
-// GET /admin/users/list - Redirect to /admin/users for consistency
-app.get('/admin/users/list', requireManager, (req, res) => {
-  res.redirect('/admin/users' + (req.query.search ? '?search=' + encodeURIComponent(req.query.search) : '') + (req.query.page ? (req.query.search ? '&' : '?') + 'page=' + req.query.page : ''));
-});
-
 app.get('/admin/users', requireManager, async (req, res) => {
   try {
     // Pagination settings
@@ -3148,7 +2847,7 @@ app.get('/admin/users', requireManager, async (req, res) => {
       personId: u.personid || null
     }));
     
-    res.render('admin/users/list', { 
+    res.render('admin/admin-users', { 
       currentPage: 'admin', 
       pageTitle: 'Manage Users', 
       users,
@@ -3163,7 +2862,7 @@ app.get('/admin/users', requireManager, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.render('admin/users/list', { 
+    res.render('admin/admin-users', { 
       currentPage: 'admin', 
       pageTitle: 'Manage Users', 
       users: [],
@@ -3179,7 +2878,7 @@ app.get('/admin/users', requireManager, async (req, res) => {
 
 // GET /admin/users/new - Show form to add new user
 app.get('/admin/users/new', requireManager, (req, res) => {
-  res.render('admin/users/form', {
+  res.render('admin/user-form', {
     currentPage: 'admin',
     pageTitle: 'Add New User',
     user: null,
@@ -3194,7 +2893,7 @@ app.post('/admin/users', requireManager, async (req, res) => {
 
     // Validate required fields
     if (!email || !level) {
-      return res.render('admin/users/form', {
+      return res.render('admin/user-form', {
         currentPage: 'admin',
         pageTitle: 'Add New User',
         user: req.body,
@@ -3211,7 +2910,7 @@ app.post('/admin/users', requireManager, async (req, res) => {
       .first();
 
     if (existingUser) {
-      return res.render('admin/users/form', {
+      return res.render('admin/user-form', {
         currentPage: 'admin',
         pageTitle: 'Add New User',
         user: req.body,
@@ -3271,7 +2970,7 @@ app.post('/admin/users', requireManager, async (req, res) => {
     res.redirect('/admin/users?message=User created successfully!&messageType=success');
   } catch (error) {
     console.error('Error creating user:', error);
-    res.render('admin/users/form', {
+    res.render('admin/user-form', {
       currentPage: 'admin',
       pageTitle: 'Add New User',
       user: req.body,
@@ -3300,7 +2999,7 @@ app.get('/admin/users/:email/edit', requireManager, async (req, res) => {
       .where('email', email)
       .first();
 
-    res.render('admin/users/form', {
+    res.render('admin/user-form', {
       currentPage: 'admin',
       pageTitle: 'Edit User',
       user: {
@@ -3396,7 +3095,7 @@ app.post('/admin/users/:email', requireManager, async (req, res) => {
     res.redirect('/admin/users?message=User updated successfully!&messageType=success');
   } catch (error) {
     console.error('Error updating user:', error);
-    res.render('admin/users/form', {
+    res.render('admin/user-form', {
       currentPage: 'admin',
       pageTitle: 'Edit User',
       user: { ...req.body, email: decodeURIComponent(req.params.email) },
@@ -3439,6 +3138,15 @@ app.delete('/admin/users/:email', requireManager, async (req, res) => {
       message: 'Error deleting user: ' + error.message
     });
   }
+});
+
+// GET /admin/analytics - Analytics dashboard with Tableau embed (manager only)
+app.get('/admin/analytics', requireManager, (req, res) => {
+  res.render('admin/analytics', {
+    currentPage: 'analytics',
+    pageTitle: 'Analytics Dashboard',
+    pageDescription: 'View data analytics and insights'
+  });
 });
 
 
