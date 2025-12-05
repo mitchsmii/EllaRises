@@ -22,13 +22,17 @@
       <!-- Matching UI -->
       <div class="match-maker-wrapper">
         <h3>Create a Match</h3>
-        <form action="/manage/events/<%= event.id %>/match" method="POST" class="match-form">
+        <form action="/admin/events/<%= event.detailId %>/match" method="POST" class="match-form">
           <div class="form-group">
             <label for="driver-select">Select a Driver</label>
             <select name="driverEmail" id="driver-select" required>
               <option value="">-- Choose a driver --</option>
-              <% drivers.forEach(rsvp => { %>
-                <option value="<%= rsvp.userEmail %>"><%= rsvp.userEmail %> (<%= rsvp.seatCount %> seats)</option>
+              <% drivers.forEach(driver => { %>
+                <option value="<%= driver.userEmail %>" 
+                  <%= driver.availableSeats <= 0 ? 'disabled' : '' %>>
+                  <%= driver.userName || driver.userEmail %> 
+                  (<%= driver.availableSeats %>/<%= driver.seatCount %> seats available)
+                </option>
               <% }) %>
             </select>
           </div>
@@ -36,19 +40,44 @@
             <label for="rider-select">Select a Rider</label>
             <select name="riderEmail" id="rider-select" required>
               <option value="">-- Choose a rider --</option>
-              <% riders.forEach(rsvp => { %>
-                <option value="<%= rsvp.userEmail %>"><%= rsvp.userEmail %></option>
-              <% }) %>
+              <% if (riders.length > 0) { %>
+                <% riders.forEach(rider => { %>
+                  <option value="<%= rider.userEmail %>"><%= rider.userName || rider.userEmail %></option>
+                <% }) %>
+              <% } else { %>
+                <option value="" disabled>No unmatched riders available</option>
+              <% } %>
             </select>
           </div>
-          <button type="submit" class="btn btn-primary">Create Match & Notify</button>
+          <button type="submit" class="btn btn-primary" <%= riders.length === 0 ? 'disabled' : '' %>>Create Match</button>
         </form>
-        <% if (locals.matchMessage) { %>
-          <div class="match-message <%= locals.matchSuccess ? 'success' : 'error' %>">
-            <%= locals.matchMessage %>
+        <% if (matchMessage) { %>
+          <div class="match-message <%= matchSuccess ? 'success' : 'error' %>">
+            <%= matchMessage %>
           </div>
         <% } %>
       </div>
+
+      <!-- Existing Matches -->
+      <% if (matches && matches.length > 0) { %>
+        <div class="matches-section">
+          <h3>Existing Matches (<%= matches.length %>)</h3>
+          <div class="matches-list">
+            <% matches.forEach(match => { %>
+              <div class="match-card">
+                <div class="match-info">
+                  <strong><%= match.driverName %></strong>
+                  <span class="match-arrow">→</span>
+                  <strong><%= match.riderName %></strong>
+                </div>
+                <div class="match-meta">
+                  Matched on <%= new Date(match.matchedAt).toLocaleDateString() %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
 
       <!-- Data Display Grid -->
       <div class="transport-grid">
@@ -57,15 +86,20 @@
           <h4>Offering Rides (<%= drivers.length %>)</h4>
           <% if (drivers.length > 0) { %>
             <ul class="transport-list">
-              <% drivers.forEach(rsvp => { %>
+              <% drivers.forEach(driver => { %>
                 <li class="transport-card">
                   <div class="card-main">
-                    <span class="user-email"><%= rsvp.userEmail %></span>
-                    <span class="seat-count"><%= rsvp.seatCount %> seats</span>
+                    <span class="user-email"><%= driver.userName || driver.userEmail %></span>
+                    <span class="seat-count <%= driver.availableSeats <= 0 ? 'seat-full' : '' %>">
+                      <%= driver.availableSeats %>/<%= driver.seatCount %> seats
+                    </span>
                   </div>
                   <div class="card-details">
-                    <span>Radius: <%= rsvp.radius %> miles</span>
-                    <span>From: <%= rsvp.address %></span>
+                    <span>Radius: <%= driver.radius %> miles</span>
+                    <span>From: <%= driver.address %></span>
+                    <% if (driver.matchedCount > 0) { %>
+                      <span class="matched-info">Matched with <%= driver.matchedCount %> rider<%= driver.matchedCount !== 1 ? 's' : '' %></span>
+                    <% } %>
                   </div>
                 </li>
               <% }) %>
@@ -77,22 +111,29 @@
 
         <!-- Riders Column -->
         <div class="transport-column">
-          <h4>Needing a Ride (<%= riders.length %>)</h4>
+          <h4>Needing a Ride (<%= riders.length %> unmatched)</h4>
           <% if (riders.length > 0) { %>
             <ul class="transport-list">
-              <% riders.forEach(rsvp => { %>
+              <% riders.forEach(rider => { %>
                 <li class="transport-card">
                   <div class="card-main">
-                    <span class="user-email"><%= rsvp.userEmail %></span>
+                    <span class="user-email"><%= rider.userName || rider.userEmail %></span>
                   </div>
                   <div class="card-details">
-                    <span>From: <%= rsvp.address %></span>
+                    <span>From: <%= rider.address %></span>
+                    <span>Phone: <%= rider.userPhone || 'Not provided' %></span>
                   </div>
                 </li>
               <% }) %>
             </ul>
           <% } else { %>
-            <p class="empty-state">No one has requested a carpool spot yet.</p>
+            <p class="empty-state">
+              <% if (typeof matches !== 'undefined' && matches.length > 0) { %>
+                All riders have been matched!
+              <% } else { %>
+                No one has requested a carpool spot yet.
+              <% } %>
+            </p>
           <% } %>
         </div>
       </div>
@@ -198,6 +239,74 @@
     font-size: 0.9rem;
     color: var(--text-secondary);
     text-align: center;
+  }
+  
+  .seat-count.seat-full {
+    background: var(--danger-light);
+    color: var(--danger);
+  }
+  
+  .matched-info {
+    color: var(--success);
+    font-weight: 500;
+    margin-top: 0.25rem;
+  }
+  
+  .matches-section {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-top: 2rem;
+  }
+  
+  .matches-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--peach-light);
+    padding-bottom: 0.5rem;
+  }
+  
+  .matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .match-card {
+    background: var(--bg-light);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--success);
+  }
+  
+  .match-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .match-arrow {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+  }
+  
+  .match-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+  
+  @media (max-width: 768px) {
+    .match-form {
+      grid-template-columns: 1fr;
+    }
+    
+    .transport-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 

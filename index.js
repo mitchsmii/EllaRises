@@ -1953,6 +1953,14 @@ app.get('/admin/events/:detailId/transportation', requireManager, async (req, re
     // Get carpooling data for this event
     const carpoolData = getCarpoolingData(eventDetailId);
 
+    // Get existing matches
+    const matches = carpoolData.matches || [];
+    const matchedRiderEmails = matches.map(m => m.riderEmail);
+    const driverMatchCounts = {};
+    matches.forEach(match => {
+      driverMatchCounts[match.driverEmail] = (driverMatchCounts[match.driverEmail] || 0) + 1;
+    });
+
     // Format drivers and riders for display
     const drivers = carpoolData.drivers.map(driver => ({
       userEmail: driver.email,
@@ -1960,22 +1968,44 @@ app.get('/admin/events/:detailId/transportation', requireManager, async (req, re
       userPhone: driver.phone,
       address: driver.address,
       radius: driver.radius,
-      seatCount: driver.seatCount
+      seatCount: driver.seatCount,
+      matchedCount: driverMatchCounts[driver.email] || 0,
+      availableSeats: driver.seatCount - (driverMatchCounts[driver.email] || 0)
     }));
 
-    const riders = carpoolData.riders.map(rider => ({
-      userEmail: rider.email,
-      userName: rider.name,
-      userPhone: rider.phone,
-      address: rider.address
-    }));
+    // Filter out already matched riders
+    const availableRiders = carpoolData.riders
+      .filter(rider => !matchedRiderEmails.includes(rider.email))
+      .map(rider => ({
+        userEmail: rider.email,
+        userName: rider.name,
+        userPhone: rider.phone,
+        address: rider.address
+      }));
+
+    // Format matches for display
+    const formattedMatches = matches.map(match => {
+      const driver = carpoolData.drivers.find(d => d.email === match.driverEmail);
+      const rider = carpoolData.riders.find(r => r.email === match.riderEmail);
+      return {
+        driverEmail: match.driverEmail,
+        driverName: driver?.name || match.driverEmail,
+        riderEmail: match.riderEmail,
+        riderName: rider?.name || match.riderEmail,
+        matchedAt: match.matchedAt
+      };
+    });
 
     res.render('admin/manage-transportation', {
       currentPage: 'events',
       pageTitle: 'Manage Transportation',
-      event: eventDetail,
+      event: {
+        ...eventDetail,
+        detailId: eventDetailId
+      },
       drivers: drivers,
-      riders: riders,
+      riders: availableRiders,
+      matches: formattedMatches,
       matchMessage: req.query.message || null,
       matchSuccess: req.query.success === 'true'
     });
@@ -2015,6 +2045,18 @@ app.post('/admin/events/:detailId/match', requireManager, async (req, res) => {
     
     if (driverMatches >= driver.seatCount) {
       return res.redirect(`/admin/events/${eventDetailId}/transportation?message=${encodeURIComponent('Driver has no available seats remaining.')}&success=false`);
+    }
+
+    // Check if rider is already matched
+    const riderAlreadyMatched = currentMatches.some(m => m.riderEmail === riderEmail);
+    if (riderAlreadyMatched) {
+      return res.redirect(`/admin/events/${eventDetailId}/transportation?message=${encodeURIComponent('This rider has already been matched with a driver.')}&success=false`);
+    }
+
+    // Check if this exact match already exists
+    const duplicateMatch = currentMatches.some(m => m.driverEmail === driverEmail && m.riderEmail === riderEmail);
+    if (duplicateMatch) {
+      return res.redirect(`/admin/events/${eventDetailId}/transportation?message=${encodeURIComponent('This match already exists.')}&success=false`);
     }
 
     // Create match

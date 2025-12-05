@@ -88,6 +88,9 @@
                     </td>
                     <td>
                       <div class="action-buttons">
+                        <% if (event.detailId) { %>
+                          <a href="/admin/events/<%= event.detailId %>/transportation" class="btn btn-sm btn-primary" style="margin-right: 4px;">Transport</a>
+                        <% } %>
                         <a href="/manage/events/<%= event.id %>/edit" class="btn btn-sm btn-outline">Edit</a>
                         <button class="btn btn-sm btn-danger delete-event-btn" data-id="<%= event.id %>" data-title="<%= event.title %>">Delete</button>
                       </div>
