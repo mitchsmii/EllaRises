@@ -96,6 +96,24 @@ const sampleMilestones = [
   { id: 8, title: 'Program Completion', description: 'Successfully complete one full year of the program', category: 'Achievement', points: 100 },
 ];
 
+// ============================================
+// CARPOOLING DATA (In-Memory Storage)
+// ============================================
+
+// Store carpooling data in memory: { eventDetailId: { drivers: [], riders: [] } }
+const carpoolingData = {};
+
+// Helper function to get or initialize carpooling data for an event
+function getCarpoolingData(eventDetailId) {
+  if (!carpoolingData[eventDetailId]) {
+    carpoolingData[eventDetailId] = {
+      drivers: [],
+      riders: []
+    };
+  }
+  return carpoolingData[eventDetailId];
+}
+
 const sampleParticipantMilestones = [
   { participantId: 1, participantName: 'Maria Garcia', milestoneId: 1, milestoneTitle: 'Program Orientation', completedAt: '2024-09-05' },
   { participantId: 1, participantName: 'Maria Garcia', milestoneId: 2, milestoneTitle: 'First Mentor Meeting', completedAt: '2024-09-15' },
@@ -419,7 +437,16 @@ app.get('/programs', (req, res) => {
 });
 
 app.get('/stories', (req, res) => {
-  res.render('public/stories', { currentPage: 'stories', pageTitle: 'Success Stories', pageDescription: 'Read inspiring stories from the women and girls we serve.', stories });
+  res.render('public/stories', { 
+    currentPage: 'media', 
+    pageTitle: 'Media Coverage', 
+    pageDescription: 'See where Ella Rises has been featured in local news, radio, and digital publications.' 
+  });
+});
+
+// Redirect /media to /stories for consistency
+app.get('/media', (req, res) => {
+  res.redirect('/stories');
 });
 
 app.get('/events', async (req, res) => {
@@ -669,9 +696,51 @@ app.post('/events/:detailId/rsvp', requireLogin, async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?)
     `, [nextRegistrationId, person.personid, eventDetailId, 'active', 0, new Date()]);
 
+    // Handle carpooling data if provided
+    const { option, address, radius, seatCount } = req.body;
+    if (option) {
+      const carpoolData = getCarpoolingData(eventDetailId);
+      const userEmail = req.session.user.email;
+      const userName = `${person.firstname || ''} ${person.lastname || ''}`.trim() || userEmail;
+      const userPhone = person.phone || 'Not provided';
+
+      if (option === 'carpool-request' && address) {
+        // Add rider request
+        carpoolData.riders.push({
+          email: userEmail,
+          name: userName,
+          phone: userPhone,
+          address: address,
+          personid: person.personid
+        });
+      } else if (option === 'driver-offer' && address && radius && seatCount) {
+        // Add driver offer
+        carpoolData.drivers.push({
+          email: userEmail,
+          name: userName,
+          phone: userPhone,
+          address: address,
+          radius: parseInt(radius),
+          seatCount: parseInt(seatCount),
+          personid: person.personid
+        });
+      } else if (option === 'bus' || option === 'virtual' || option === 'no-drive') {
+        // User has their own transportation or virtual event - no carpooling needed
+      }
+    }
+
+    let message = 'Successfully RSVP\'d to the event!';
+    if (option === 'carpool-request') {
+      message = 'Your carpool request has been submitted! We\'ll match you with a driver soon.';
+    } else if (option === 'driver-offer') {
+      message = 'Thank you for offering to drive! We\'ll match you with riders who need a ride.';
+    } else if (option === 'bus') {
+      message = 'RSVP confirmed! We\'ve opened transit directions for you.';
+    }
+
     res.json({
       success: true,
-      message: 'Successfully RSVP\'d to the event!'
+      message: message
     });
   } catch (error) {
     console.error('Error creating RSVP:', error);
@@ -722,6 +791,16 @@ app.delete('/events/:detailId/rsvp', requireLogin, async (req, res) => {
       SET registrationstatus = 'cancelled'
       WHERE registrationid = ?
     `, [registration.rows[0].registrationid]);
+
+    // Remove user from carpooling data if they're in it
+    const carpoolData = getCarpoolingData(eventDetailId);
+    const userEmail = req.session.user.email;
+    
+    // Remove from drivers
+    carpoolData.drivers = carpoolData.drivers.filter(driver => driver.email !== userEmail);
+    
+    // Remove from riders
+    carpoolData.riders = carpoolData.riders.filter(rider => rider.email !== userEmail);
 
     res.json({
       success: true,
@@ -931,9 +1010,6 @@ app.get('/418', (req, res) => {
   });
 });
 
-app.get('/resources', (req, res) => {
-  res.render('public/resources', { currentPage: 'resources', pageTitle: 'Resources', pageDescription: 'Tools and information for students, mentors, and families.' });
-});
 
 app.post('/contact', (req, res) => {
   res.redirect('/contact?success=true');
@@ -1843,6 +1919,122 @@ app.delete('/manage/events/:id', requireManager, async (req, res) => {
       success: false,
       message: 'Error deleting event: ' + error.message
     });
+  }
+});
+
+// ============================================
+// TRANSPORTATION / CARPOOLING ROUTES
+// ============================================
+
+// GET /admin/events/:detailId/transportation - View transportation management page
+app.get('/admin/events/:detailId/transportation', requireManager, async (req, res) => {
+  try {
+    const eventDetailId = parseInt(req.params.detailId);
+
+    // Get event details
+    const eventDetail = await knex('event_details')
+      .join('events', 'event_details.eventid', 'events.eventid')
+      .where('event_details.eventdetailid', eventDetailId)
+      .select(
+        'events.eventname as title',
+        'events.eventdescription as description',
+        'event_details.eventlocation as location',
+        'event_details.eventdatetimestart as eventDate'
+      )
+      .first();
+
+    if (!eventDetail) {
+      return res.status(404).render('errors/404', {
+        currentPage: 'events',
+        pageTitle: 'Event Not Found'
+      });
+    }
+
+    // Get carpooling data for this event
+    const carpoolData = getCarpoolingData(eventDetailId);
+
+    // Format drivers and riders for display
+    const drivers = carpoolData.drivers.map(driver => ({
+      userEmail: driver.email,
+      userName: driver.name,
+      userPhone: driver.phone,
+      address: driver.address,
+      radius: driver.radius,
+      seatCount: driver.seatCount
+    }));
+
+    const riders = carpoolData.riders.map(rider => ({
+      userEmail: rider.email,
+      userName: rider.name,
+      userPhone: rider.phone,
+      address: rider.address
+    }));
+
+    res.render('admin/manage-transportation', {
+      currentPage: 'events',
+      pageTitle: 'Manage Transportation',
+      event: eventDetail,
+      drivers: drivers,
+      riders: riders,
+      matchMessage: req.query.message || null,
+      matchSuccess: req.query.success === 'true'
+    });
+  } catch (error) {
+    console.error('Error loading transportation page:', error);
+    res.status(500).render('errors/500', {
+      currentPage: 'events',
+      pageTitle: 'Error',
+      message: 'Failed to load transportation page.'
+    });
+  }
+});
+
+// POST /admin/events/:detailId/match - Match a driver with a rider
+app.post('/admin/events/:detailId/match', requireManager, async (req, res) => {
+  try {
+    const eventDetailId = parseInt(req.params.detailId);
+    const { driverEmail, riderEmail } = req.body;
+
+    if (!driverEmail || !riderEmail) {
+      return res.redirect(`/admin/events/${eventDetailId}/transportation?message=${encodeURIComponent('Please select both a driver and a rider.')}&success=false`);
+    }
+
+    const carpoolData = getCarpoolingData(eventDetailId);
+
+    // Find driver and rider
+    const driver = carpoolData.drivers.find(d => d.email === driverEmail);
+    const rider = carpoolData.riders.find(r => r.email === riderEmail);
+
+    if (!driver || !rider) {
+      return res.redirect(`/admin/events/${eventDetailId}/transportation?message=${encodeURIComponent('Driver or rider not found.')}&success=false`);
+    }
+
+    // Check if driver has available seats
+    const currentMatches = carpoolData.matches || [];
+    const driverMatches = currentMatches.filter(m => m.driverEmail === driverEmail).length;
+    
+    if (driverMatches >= driver.seatCount) {
+      return res.redirect(`/admin/events/${eventDetailId}/transportation?message=${encodeURIComponent('Driver has no available seats remaining.')}&success=false`);
+    }
+
+    // Create match
+    if (!carpoolData.matches) {
+      carpoolData.matches = [];
+    }
+    
+    carpoolData.matches.push({
+      driverEmail: driverEmail,
+      riderEmail: riderEmail,
+      matchedAt: new Date()
+    });
+
+    // TODO: Send notification emails to driver and rider
+    // For now, just redirect with success message
+
+    res.redirect(`/admin/events/${eventDetailId}/transportation?message=${encodeURIComponent(`Successfully matched ${driverEmail} with ${riderEmail}!`)}&success=true`);
+  } catch (error) {
+    console.error('Error creating match:', error);
+    res.redirect(`/admin/events/${req.params.detailId}/transportation?message=${encodeURIComponent('Error creating match: ' + error.message)}&success=false`);
   }
 });
 
