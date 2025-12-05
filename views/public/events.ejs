@@ -314,13 +314,25 @@
 
         async function submitRsvp(data, detailId) {
           try {
-            const response = await fetch(`/events/${detailId || currentEventDetailId}/rsvp`, {
+            const eventDetailId = detailId || currentEventDetailId;
+            if (!eventDetailId) {
+              return { success: false, message: 'Event ID is missing. Please try again.' };
+            }
+            
+            const response = await fetch(`/events/${eventDetailId}/rsvp`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(data)
             });
-            if (!response.ok) throw new Error('Network response was not ok');
-            return await response.json();
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+              console.error('RSVP Error Response:', result);
+              return { success: false, message: result.message || 'An error occurred while processing your RSVP.' };
+            }
+            
+            return result;
           } catch (error) {
             console.error('RSVP Submission Error:', error);
             return { success: false, message: 'Sorry, there was an error submitting your RSVP. Please try again later.' };

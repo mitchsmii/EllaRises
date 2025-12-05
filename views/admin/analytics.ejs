@@ -1,0 +1,66 @@
+<%- include('../partials/header') %>
+
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <button onclick="window.history.back()" class="btn btn-sm btn-outline" style="margin-bottom: var(--space-md);">← Back</button>
+        <p class="eyebrow">Analytics Dashboard</p>
+        <h1>Data <em>Analytics</em></h1>
+        <p class="page-lead">View comprehensive data analytics and insights for Ella Rises.</p>
+      </div>
+    </section>
+
+    <!-- Analytics Content -->
+    <section class="section analytics-section">
+      <div class="container">
+        <div class="analytics-container">
+          <!-- Tableau embed -->
+          <div class="tableau-embed" id="tableau-embed">
+            <div class='tableauPlaceholder' id='viz1764874668928' style='position: relative'>
+              <noscript>
+                <a href='#'>
+                  <img alt='Intex Dashboard ' src='https://public.tableau.com/static/images/In/IntexDashboard_17648746284170/IntexDashboard/1_rss.png' style='border: none' />
+                </a>
+              </noscript>
+              <object class='tableauViz' style='display:none;'>
+                <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+                <param name='embed_code_version' value='3' />
+                <param name='site_root' value='' />
+                <param name='name' value='IntexDashboard_17648746284170&#47;IntexDashboard' />
+                <param name='tabs' value='no' />
+                <param name='toolbar' value='yes' />
+                <param name='static_image' value='https://public.tableau.com/static/images/In/IntexDashboard_17648746284170/IntexDashboard/1.png' />
+                <param name='animate_transition' value='yes' />
+                <param name='display_static_image' value='yes' />
+                <param name='display_spinner' value='yes' />
+                <param name='display_overlay' value='yes' />
+                <param name='display_count' value='yes' />
+                <param name='language' value='en-US' />
+                <param name='filter' value='publish=yes' />
+              </object>
+            </div>
+            <script type='text/javascript'>
+              var divElement = document.getElementById('viz1764874668928');
+              var vizElement = divElement.getElementsByTagName('object')[0];
+              // Keep full height, but constrain width
+              if (divElement.offsetWidth > 800) {
+                vizElement.style.width = '100%';
+                vizElement.style.height = '1800px';
+              } else if (divElement.offsetWidth > 500) {
+                vizElement.style.width = '100%';
+                vizElement.style.height = '1800px';
+              } else {
+                vizElement.style.width = '100%';
+                vizElement.style.height = '1600px';
+              }
+              var scriptElement = document.createElement('script');
+              scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+              vizElement.parentNode.insertBefore(scriptElement, vizElement);
+            </script>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<%- include('../partials/footer') %>
+

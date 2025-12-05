@@ -15,19 +15,19 @@
         
         <!-- Row 1 -->
         <div class="program-row">
-          <div class="program-card program-card-left">
+          <div class="program-card program-card-left" data-program="ballet">
             <div class="program-card-content">
               <span class="program-number">01</span>
               <h3>Ballet Folklórico</h3>
               <p>Traditional Mexican folk dance connecting young women to their cultural heritage through movement, music, and storytelling.</p>
-              <a href="/get-involved" class="btn btn-sm btn-primary">Learn More</a>
+              <button class="btn btn-sm btn-primary program-detail-btn">Learn More</button>
             </div>
             <div class="program-card-image">
               <img src="/uploads/programs/ballet.avif" alt="Ballet Folklórico program">
             </div>
           </div>
           
-          <div class="program-card program-card-right">
+          <div class="program-card program-card-right" data-program="mariachi">
             <div class="program-card-image">
               <img src="/uploads/programs/mariachi.avif" alt="Mariachi program">
             </div>
@@ -35,26 +35,26 @@
               <span class="program-number">02</span>
               <h3>Mariachi</h3>
               <p>Learn traditional instruments, develop vocal skills, and perform as an ensemble—building confidence and musical literacy.</p>
-              <a href="/get-involved" class="btn btn-sm btn-primary">Learn More</a>
+              <button class="btn btn-sm btn-primary program-detail-btn">Learn More</button>
             </div>
           </div>
         </div>
 
         <!-- Row 2 -->
         <div class="program-row">
-          <div class="program-card program-card-left">
+          <div class="program-card program-card-left" data-program="steam">
             <div class="program-card-content">
               <span class="program-number">03</span>
               <h3>STEAM</h3>
               <p>In partnership with UVU and BYU, explore science, technology, engineering, arts, and math through hands-on workshops.</p>
-              <a href="/get-involved" class="btn btn-sm btn-primary">Learn More</a>
+              <button class="btn btn-sm btn-primary program-detail-btn">Learn More</button>
             </div>
             <div class="program-card-image">
               <img src="/uploads/programs/steam.avif" alt="STEAM program">
             </div>
           </div>
           
-          <div class="program-card program-card-right">
+          <div class="program-card program-card-right" data-program="summit">
             <div class="program-card-image">
               <img src="/uploads/programs/summit.avif" alt="Summit + Educational Pathways program">
             </div>
@@ -62,13 +62,22 @@
               <span class="program-number">04</span>
               <h3>Summit + Educational Pathways</h3>
               <p>College preparation, scholarship guidance, and leadership development to help you achieve your academic goals.</p>
-              <a href="/get-involved" class="btn btn-sm btn-primary">Learn More</a>
+              <button class="btn btn-sm btn-primary program-detail-btn">Learn More</button>
             </div>
           </div>
         </div>
 
       </div>
     </section>
+
+    <!-- Program Detail Modals -->
+    <div id="programModal" class="program-modal">
+      <div class="program-modal-overlay"></div>
+      <div class="program-modal-content">
+        <button class="program-modal-close" id="closeProgramModal">&times;</button>
+        <div id="programModalBody"></div>
+      </div>
+    </div>
 
     <!-- Program CTA -->
     <section class="section section-cta">
@@ -83,5 +92,111 @@
         </div>
       </div>
     </section>
+
+    <script>
+      // Program detail data
+      const programDetails = {
+        ballet: {
+          title: 'BALLET FOLKLORICO',
+          details: [
+            'Girls ages 11-18 years old',
+            'Mondays at 7pm',
+            'Auditions for 2026 begin in May'
+          ]
+        },
+        mariachi: {
+          title: 'MARIACHI',
+          details: [
+            'Girls ages 11-18',
+            'Music class for: violin, trumpet, guitarrón, vihuela, and guitar',
+            'Mondays from 5:30pm - 6:45pm',
+            'Annual program fee: $45 (venmo or cash)'
+          ]
+        },
+        steam: {
+          title: 'STEAM',
+          details: [
+            'Virtual and in-person STEAM (science, technology, engineering, art, and math) workshops to develop and guide participant inquiry, discussion, and critical thinking of STEAM related careers.',
+            'Workshops produced in partnership with Thanksgiving Point, UVU, and BYU.'
+          ]
+        },
+        summit: {
+          title: 'SUMMIT + EDUCATIONAL PATHWAYS',
+          details: [
+            'Girls ages 11-18 years old',
+            'Day camp packed with activities to give a glimpse of the Ella Rises Experience: art, STEM, and a focus on education!',
+            'Conclude the day camp with a tour of a local university or technical college!'
+          ]
+        }
+      };
+
+      // Modal functionality
+      const modal = document.getElementById('programModal');
+      const modalBody = document.getElementById('programModalBody');
+      const closeBtn = document.getElementById('closeProgramModal');
+      const programCards = document.querySelectorAll('.program-card');
+      const programButtons = document.querySelectorAll('.program-detail-btn');
+
+      function openModal(programKey) {
+        const program = programDetails[programKey];
+        if (!program) return;
+
+        modalBody.innerHTML = `
+          <h2>${program.title}</h2>
+          <div class="program-modal-details">
+            ${program.details.map(detail => `<p>• ${detail}</p>`).join('')}
+          </div>
+          <div class="program-modal-actions">
+            <a href="/events" class="btn btn-primary">View Events</a>
+            <button class="btn btn-outline" id="closeModalBtn">Close</button>
+          </div>
+        `;
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Add close handler to the new close button
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+      }
+
+      function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      // Make entire cards clickable
+      programCards.forEach(card => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', (e) => {
+          // Don't open modal if clicking the button directly (it will handle its own click)
+          if (e.target.classList.contains('program-detail-btn')) return;
+          const programKey = card.getAttribute('data-program');
+          openModal(programKey);
+        });
+      });
+
+      // Button clicks
+      programButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = btn.closest('.program-card');
+          const programKey = card.getAttribute('data-program');
+          openModal(programKey);
+        });
+      });
+
+      // Close button
+      closeBtn.addEventListener('click', closeModal);
+      
+      // Close on overlay click
+      document.querySelector('.program-modal-overlay').addEventListener('click', closeModal);
+
+      // Close on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          closeModal();
+        }
+      });
+    </script>
 
 <%- include('../partials/footer') %>
