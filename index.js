@@ -205,15 +205,15 @@ const brand = {
 };
 
 const focusAreas = [
-  { title: 'Mentorship', copy: 'Pairing young women with mentors and leaders who open doors, share wisdom, and help chart clear next steps.' },
-  { title: 'Education', copy: 'Workshops, scholarships, and skill-building that equip girls with confidence and practical tools.' },
-  { title: 'Community', copy: 'Circles of support where women advocate for each other, celebrate wins, and show up in service.' },
+  { title: 'Programs', copy: 'Explore our culturally rooted programs including Ballet Folklórico, Mariachi, STEAM, and educational pathways that empower young women.' },
+  { title: 'Events', copy: 'Join us for workshops, community gatherings, and special events designed to inspire, educate, and connect our community.' },
+  { title: 'Media', copy: 'See how local news outlets, radio stations, and media platforms are sharing our mission and impact with the community.' },
 ];
 
 const stats = [
-  { label: 'Students served', value: '1,200+' },
-  { label: 'Mentor matches', value: '350' },
-  { label: 'Workshops delivered', value: '80+' },
+  { label: 'Students served', value: '450+' },
+  { label: 'Mentor matches', value: '200+' },
+  { label: 'Workshops delivered', value: '50+' },
 ];
 
 const stories = [
@@ -320,7 +320,7 @@ app.post('/login', async (req, res) => {
       });
     }
     
-    // Plain text password comparison (add bcrypt later)
+    // Plain text password comparison
     if (loginUser.password !== password) {
       return res.render('auth/login', {
         currentPage: 'login',
@@ -364,6 +364,8 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
   });
 });
+
+
 
 
 
@@ -437,8 +439,13 @@ app.get('/programs', (req, res) => {
   res.render('public/programs', { currentPage: 'programs', pageTitle: 'Our Programs', pageDescription: 'Explore our mentorship, education, and community programs.', focusAreas });
 });
 
+app.get('/media', (req, res) => {
+  res.render('public/stories', { currentPage: 'media', pageTitle: 'Media Coverage', pageDescription: 'See how local news outlets, radio stations, and media platforms are sharing our mission and impact with the community.', stories });
+});
+
+// Keep /stories route for backwards compatibility, redirect to /media
 app.get('/stories', (req, res) => {
-  res.render('public/stories', { currentPage: 'stories', pageTitle: 'Success Stories', pageDescription: 'Read inspiring stories from the women and girls we serve.', stories });
+  res.redirect('/media');
 });
 
 app.get('/events', async (req, res) => {
@@ -625,11 +632,13 @@ app.post('/events/:detailId/rsvp', requireLogin, async (req, res) => {
       });
     }
 
-    // Check if event is in the past
-    if (new Date(eventDetail.eventdatetimestart) < new Date()) {
+    // Check if event start time is in the past (allow RSVP up to event start time)
+    // Note: We allow RSVP even if event has started but not ended yet
+    // Only block if event has completely ended
+    if (eventDetail.eventdatetimeend && new Date(eventDetail.eventdatetimeend) < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot RSVP to past events.'
+        message: 'Cannot RSVP to events that have already ended.'
       });
     }
 
@@ -842,7 +851,7 @@ app.delete('/events/:detailId/rsvp', requireLogin, async (req, res) => {
 });
 
 app.get('/get-involved', (req, res) => {
-  res.render('public/get-involved', { currentPage: 'get-involved', pageTitle: 'Get Involved', pageDescription: 'Discover ways to volunteer, mentor, donate, and partner with Ella Rises.' });
+  res.redirect('/contact');
 });
 
 app.get('/donate', async (req, res) => {
@@ -1036,9 +1045,6 @@ app.get('/418', (req, res) => {
   });
 });
 
-app.get('/resources', (req, res) => {
-  res.render('public/resources', { currentPage: 'resources', pageTitle: 'Resources', pageDescription: 'Tools and information for students, mentors, and families.' });
-});
 
 app.post('/contact', (req, res) => {
   res.redirect('/contact?success=true');
@@ -2132,7 +2138,13 @@ app.get('/manage/surveys/new', requireManager, (req, res) => {
 });
 
 // GET /surveys/:id/edit - Show form to edit survey (manager only)
+// GET /surveys/:id/edit - Edit survey (manager only) - legacy route
 app.get('/surveys/:id/edit', requireManager, async (req, res) => {
+  res.redirect(`/manage/surveys/${req.params.id}/edit`);
+});
+
+// GET /manage/surveys/:id/edit - Edit survey (manager only)
+app.get('/manage/surveys/:id/edit', requireManager, async (req, res) => {
   try {
     const surveyId = parseInt(req.params.id);
     
@@ -2751,6 +2763,15 @@ app.delete('/manage/donations/:id', requireManager, async (req, res) => {
   }
 });
 
+// GET /admin/analytics - Analytics dashboard with Tableau embed (manager only)
+app.get('/admin/analytics', requireManager, (req, res) => {
+  res.render('admin/analytics', {
+    currentPage: 'analytics',
+    pageTitle: 'Analytics Dashboard',
+    pageDescription: 'View data analytics and insights'
+  });
+});
+
 app.get('/manage/milestones', requireManager, async (req, res) => {
   try {
     const search = req.query.search || '';
@@ -3069,6 +3090,11 @@ app.delete('/manage/milestones/:id', requireManager, async (req, res) => {
       message: 'Error deleting milestone: ' + error.message
     });
   }
+});
+
+// GET /admin/users/list - Redirect to /admin/users for consistency
+app.get('/admin/users/list', requireManager, (req, res) => {
+  res.redirect('/admin/users' + (req.query.search ? '?search=' + encodeURIComponent(req.query.search) : '') + (req.query.page ? (req.query.search ? '&' : '?') + 'page=' + req.query.page : ''));
 });
 
 app.get('/admin/users', requireManager, async (req, res) => {

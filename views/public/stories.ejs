@@ -3,134 +3,88 @@
     <!-- Page Hero -->
     <section class="page-hero">
       <div class="container">
-        <p class="eyebrow">Success Stories</p>
-        <h1>Real stories of <em>real impact</em>.</h1>
-        <p class="page-lead">Every number represents a life changed. Here are some of the women and girls who inspire us every day.</p>
+        <p class="eyebrow">In The News</p>
+        <h1>Ella Rises in the <em>media</em>.</h1>
+        <p class="page-lead">See how local news outlets, radio stations, and media platforms are sharing our mission and impact with the community.</p>
       </div>
     </section>
 
-    <!-- Featured Story -->
-    <section class="section">
-      <div class="container">
-        <div class="featured-story">
-          <div class="featured-image">
-            <div class="image-placeholder featured">
-              <span>Featured Story Image</span>
-            </div>
-          </div>
-          <div class="featured-content">
-            <span class="story-tag">Featured Story</span>
-            <h2>"Ella Rises showed me that my dreams weren't too big."</h2>
-            <p>When Maria joined Ella Rises as a shy sophomore, she never imagined she'd be speaking at her high school graduation three years later. Through mentorship and our Leadership Academy, she discovered her voice—and learned how to use it.</p>
-            <p>Today, Maria is a junior at State University studying communications, and she volunteers as a mentor for the next generation of Ella Rises girls.</p>
-            <div class="story-meta">
-              <span class="story-author">Maria, Class of 2022</span>
-              <span class="story-program">Mentorship & Leadership Academy</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Story Grid -->
-    <section class="section section-alt">
-      <div class="container">
-        <div class="section-header">
-          <h2>More voices from our community</h2>
-        </div>
-
-        <div class="stories-grid">
-          <% stories.forEach(story => { %>
-            <article class="story-card">
-              <div class="story-card-image">
-                <div class="image-placeholder"></div>
-              </div>
-              <div class="story-card-content">
-                <blockquote>"<%= story.quote %>"</blockquote>
-                <cite><%= story.name %></cite>
-              </div>
-            </article>
-          <% }) %>
-
-          <!-- Additional placeholder stories -->
-          <article class="story-card">
-            <div class="story-card-image">
-              <div class="image-placeholder"></div>
-            </div>
-            <div class="story-card-content">
-              <blockquote>"The workshops gave me skills I use every day in my career. I learned how to negotiate, how to network, and how to believe in myself."</blockquote>
-              <cite>Taylor, Program Alumna</cite>
-            </div>
-          </article>
-
-          <article class="story-card">
-            <div class="story-card-image">
-              <div class="image-placeholder"></div>
-            </div>
-            <div class="story-card-content">
-              <blockquote>"Being part of a community circle changed how I see myself. I'm not alone anymore—I have sisters who understand me."</blockquote>
-              <cite>Destiny, Community Circle Member</cite>
-            </div>
-          </article>
-
-          <article class="story-card">
-            <div class="story-card-image">
-              <div class="image-placeholder"></div>
-            </div>
-            <div class="story-card-content">
-              <blockquote>"As a mentor, I thought I was giving back. But I've received so much more than I've given. These girls inspire me every day."</blockquote>
-              <cite>Dr. Williams, Volunteer Mentor</cite>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- Video Stories -->
+    <!-- Media Stories Grid -->
     <section class="section">
       <div class="container">
         <div class="section-header centered">
-          <p class="eyebrow">Watch & Listen</p>
-          <h2>Stories in their own words</h2>
+          <h2>Media Coverage</h2>
+          <p class="section-lead">Ella Rises has been featured across Utah's media landscape, highlighting our programs and the incredible young women we serve.</p>
         </div>
 
-        <div class="video-grid">
-          <div class="video-card">
-            <div class="video-placeholder">
-              <div class="play-button">▶</div>
-              <span>Video: A Mentor's Journey</span>
+        <div class="media-stories-grid">
+          <article class="media-story-card">
+            <div class="media-story-image">
+              <img src="/uploads/stories/KUTV.avif" alt="KUTV Coverage of Ella Rises" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
-            <h4>A Mentor's Journey</h4>
-            <p>Sarah shares how mentoring changed her perspective on leadership.</p>
-          </div>
-          <div class="video-card">
-            <div class="video-placeholder">
-              <div class="play-button">▶</div>
-              <span>Video: From Mentee to Mentor</span>
+            <div class="media-story-content">
+              <span class="media-badge">Television</span>
+              <h3>KUTV</h3>
+              <p>Ella Rises featured on KUTV News, showcasing our programs and community impact.</p>
             </div>
-            <h4>From Mentee to Mentor</h4>
-            <p>How one graduate came full circle to give back.</p>
-          </div>
-          <div class="video-card">
-            <div class="video-placeholder">
-              <div class="play-button">▶</div>
-              <span>Video: Community Impact</span>
+          </article>
+
+          <article class="media-story-card">
+            <div class="media-story-image">
+              <img src="/uploads/stories/goodthingsutah.avif" alt="Good Things Utah Coverage of Ella Rises" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
-            <h4>Community Impact</h4>
-            <p>See how Ella Rises transforms entire communities.</p>
-          </div>
+            <div class="media-story-content">
+              <span class="media-badge">Television</span>
+              <h3>Good Things Utah</h3>
+              <p>Ella Rises highlighted on Good Things Utah, sharing our mission with viewers across the state.</p>
+            </div>
+          </article>
+
+          <article class="media-story-card">
+            <div class="media-story-image">
+              <img src="/uploads/stories/ksl.avif" alt="KSL Coverage of Ella Rises" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="media-story-content">
+              <span class="media-badge">Television</span>
+              <h3>KSL</h3>
+              <p>KSL News coverage of Ella Rises programs and the young women we empower.</p>
+            </div>
+          </article>
+
+          <article class="media-story-card">
+            <div class="media-story-image">
+              <img src="/uploads/stories/utahpublicradio.avif" alt="Utah Public Radio Coverage of Ella Rises" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="media-story-content">
+              <span class="media-badge">Radio</span>
+              <h3>Utah Public Radio</h3>
+              <p>Ella Rises featured on Utah Public Radio, discussing our educational programs and community impact.</p>
+            </div>
+          </article>
+
+          <article class="media-story-card">
+            <div class="media-story-image">
+              <img src="/uploads/stories/techbuzz.avif" alt="TechBuzz Coverage of Ella Rises" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="media-story-content">
+              <span class="media-badge">Digital Media</span>
+              <h3>TechBuzz</h3>
+              <p>TechBuzz coverage highlighting Ella Rises' innovative approach to empowering young women.</p>
+            </div>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- Share Your Story CTA -->
+    <!-- CTA Section -->
     <section class="section section-cta">
       <div class="container">
         <div class="cta-content">
-          <h2>Have a story to share?</h2>
-          <p>We'd love to hear how Ella Rises has impacted your life. Your story could inspire the next generation.</p>
+          <h2>Want to learn more?</h2>
+          <p>Discover our programs, meet our team, and see how you can get involved with Ella Rises.</p>
           <div class="cta-buttons">
-            <a class="btn btn-primary btn-lg" href="/contact">Share Your Story</a>
+            <a class="btn btn-primary btn-lg" href="/programs">Explore Programs</a>
+            <a class="btn btn-outline-light btn-lg" href="/contact">Contact Us</a>
           </div>
         </div>
       </div>

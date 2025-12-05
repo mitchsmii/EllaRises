@@ -37,17 +37,13 @@
       <nav class="main-nav" id="mainNav">
         <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'about' ? ' active' : '' %>" href="/about">About</a>
         <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'programs' ? ' active' : '' %>" href="/programs">Programs</a>
-        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'stories' ? ' active' : '' %>" href="/stories">Stories</a>
         <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'events' ? ' active' : '' %>" href="/events">Events</a>
-        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'resources' ? ' active' : '' %>" href="/resources">Resources</a>
+        <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'media' ? ' active' : '' %>" href="/media">Media</a>
       </nav>
 
       <div class="header-actions">
         <% if (user) { %>
           <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? ' active' : '' %>" href="/dashboard">Dashboard</a>
-          <% if (user.role === 'manager' || user.role === 'admin') { %>
-            <a class="nav-link<%= typeof currentPage !== 'undefined' && currentPage === 'admin' ? ' active' : '' %>" href="/admin/users">Manage Users</a>
-          <% } %>
           <span class="nav-user">Hi, <%= user.firstName %></span>
           <a class="nav-link" href="/logout">Logout</a>
         <% } else { %>
