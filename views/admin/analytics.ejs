@@ -1,6 +1,5 @@
 <%- include('../partials/header') %>
 
-    <!-- Page Hero -->
     <section class="page-hero compact">
       <div class="container">
         <a href="/dashboard" class="btn btn-sm btn-outline" style="margin-bottom: var(--space-md);">← Back to Dashboard</a>
@@ -10,13 +9,13 @@
       </div>
     </section>
 
-    <!-- Analytics Section -->
     <section class="section analytics-section">
       <div class="container">
-        <div class='tableauPlaceholder' id='viz1764958761208' style='position: relative'>
+        
+        <div class='tableauPlaceholder' id='viz1764962548994' style='position: relative'>
           <noscript>
             <a href='#'>
-              <img alt='Intex Dashboard ' src='https://public.tableau.com/static/images/In/Intex2_17649587439640/IntexDashboard/1_rss.png' style='border: none' />
+              <img alt='Intex Dashboard ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;In&#47;Intex2_17649587439640&#47;IntexDashboard&#47;1_rss.png' style='border: none' />
             </a>
           </noscript>
           <object class='tableauViz' style='display:none;'>
@@ -26,35 +25,45 @@
             <param name='name' value='Intex2_17649587439640&#47;IntexDashboard' />
             <param name='tabs' value='no' />
             <param name='toolbar' value='yes' />
-            <param name='static_image' value='https://public.tableau.com/static/images/In/Intex2_17649587439640/IntexDashboard/1.png' />
+            
+            <param name='device' value='desktop' />
+            
+            <param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;In&#47;Intex2_17649587439640&#47;IntexDashboard&#47;1.png' />
             <param name='animate_transition' value='yes' />
             <param name='display_static_image' value='yes' />
             <param name='display_spinner' value='yes' />
             <param name='display_overlay' value='yes' />
             <param name='display_count' value='yes' />
             <param name='language' value='en-US' />
-            <param name='filter' value='publish=yes' />
           </object>
         </div>
+
         <script type='text/javascript'>
-          var divElement = document.getElementById('viz1764958761208');
+          var divElement = document.getElementById('viz1764962548994');
           var vizElement = divElement.getElementsByTagName('object')[0];
-          if (divElement.offsetWidth > 800) { 
-            vizElement.style.width='1066px';
-            vizElement.style.height='1127px';
-          } else if (divElement.offsetWidth > 500) { 
-            vizElement.style.width='1066px';
-            vizElement.style.height='1127px';
-          } else { 
-            vizElement.style.width='100%';
-            vizElement.style.height='1227px';
+          
+          if (divElement.offsetWidth > 800) {
+            // Desktop
+            vizElement.style.width = '1066px';
+            vizElement.style.height = '1127px';
+          } else if (divElement.offsetWidth > 500) {
+            // Tablet
+            vizElement.style.width = '1066px';
+            vizElement.style.height = '1127px';
+            vizElement.style.overflow = 'auto'; // Allow scroll if it fits tight
+          } else {
+            // Mobile - Keep fixed width to prevent charts disappearing, add scrollbar
+            vizElement.style.width = '1066px';
+            vizElement.style.height = '1127px';
+            vizElement.style.overflow = 'auto'; 
           }
+          
           var scriptElement = document.createElement('script');
           scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
           vizElement.parentNode.insertBefore(scriptElement, vizElement);
         </script>
+        
       </div>
     </section>
 
 <%- include('../partials/footer') %>
-
